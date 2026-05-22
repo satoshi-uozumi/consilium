@@ -19,30 +19,38 @@ export class SpecialistServer {
   }
 
   private registerTools(): void {
-    this.server.tool(
+    // TS2589: MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const reg = (name: string, config: object, cb: (...a: any[]) => unknown) =>
+      (this.server.registerTool as any)(name, config, cb);
+
+    reg(
       "consult",
-      `Consult the ${this.identity.name} specialist for domain-specific recommendations`,
       {
-        topic: z.string().describe("The topic or question to consult on"),
-        context: z.string().optional().describe("Relevant context from the codebase or task"),
+        description: `Consult the ${this.identity.name} specialist for domain-specific recommendations`,
+        inputSchema: {
+          topic: z.string().describe("The topic or question to consult on"),
+          context: z.string().optional().describe("Relevant context from the codebase or task"),
+        },
       },
-      async ({ topic, context }) => this.consult(topic, context)
+      async ({ topic, context }: { topic: string; context?: string }) => this.consult(topic, context)
     );
 
-    this.server.tool(
+    reg(
       "review",
-      `Ask the ${this.identity.name} specialist to review generated code against a plan`,
       {
-        plan: z.string().describe("The plan.md content the code should conform to"),
-        code: z.string().describe("The generated code to review"),
+        description: `Ask the ${this.identity.name} specialist to review generated code against a plan`,
+        inputSchema: {
+          plan: z.string().describe("The plan.md content the code should conform to"),
+          code: z.string().describe("The generated code to review"),
+        },
       },
-      async ({ plan, code }) => this.review(plan, code)
+      async ({ plan, code }: { plan: string; code: string }) => this.review(plan, code)
     );
 
-    this.server.tool(
+    reg(
       "get_skill",
-      `Return the SKILL.md for the ${this.identity.name} specialist`,
-      {},
+      { description: `Return the SKILL.md for the ${this.identity.name} specialist` },
       async () => ({ content: [{ type: "text" as const, text: loadSkill(this.identity.name) }] })
     );
   }

@@ -47,7 +47,7 @@ consilium/
 - [x] `specialists/security`: `package.json`, `tsconfig.json`, `src/index.ts`, `SKILL.md`
 - [x] `specialists/performance`: `package.json`, `tsconfig.json`, `src/index.ts`, `SKILL.md`
 - [x] `.claude/commands/`: `consult.md`, `work.md`, `done.md`
-- [ ] Build verified (blocked: OOM on 32-bit Node with TypeScript 5.9.3 — root cause unknown)
+- [x] Build verified (workaround: `reg` helper in `registerTools()` isolates `as any` cast — MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth)
 - [ ] `packages/cli`: `consilium` CLI — `install`, `add`, `remove` commands (lowest priority; use `npm link` for local dev)
 
 ## Key decisions
