@@ -1,0 +1,16 @@
+{
+  "name": "consilium",
+  "private": true,
+  "workspaces": [
+    "packages/*",
+    "specialists/*"
+  ],
+  "scripts": {
+    "build": "tsc --build",
+    "rebuild": "tsc --build --clean && tsc --build",
+    "clean": "tsc --build --clean"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.0"
+  }
+}

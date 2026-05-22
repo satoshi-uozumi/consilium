@@ -1,0 +1,16 @@
+{
+  "name": "@consilium/security",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@consilium/specialist-sdk": "*"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}

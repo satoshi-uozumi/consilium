@@ -41,12 +41,13 @@ consilium/
 
 ## Tasks
 
-- [ ] Root config: `package.json` (workspaces), `tsconfig.json`, `.gitignore`
-- [ ] Docker: `Dockerfile`, `docker-compose.yml`
-- [ ] `packages/specialist-sdk`: `package.json`, `tsconfig.json`, `src/types.ts`, `src/server.ts`, `src/skill-loader.ts`, `src/index.ts`
-- [ ] `specialists/security`: `package.json`, `tsconfig.json`, `src/index.ts`, `SKILL.md`
-- [ ] `specialists/performance`: `package.json`, `tsconfig.json`, `src/index.ts`, `SKILL.md`
-- [ ] `.claude/commands/`: `consult.md`, `work.md`, `done.md`
+- [x] Root config: `package.json` (workspaces), `tsconfig.json`, `.gitignore`, `.claudeignore`
+- [x] Docker: `Dockerfile`, `docker-compose.yml`
+- [x] `packages/specialist-sdk`: `package.json`, `tsconfig.json`, `src/types.ts`, `src/server.ts`, `src/skill-loader.ts`, `src/index.ts`
+- [x] `specialists/security`: `package.json`, `tsconfig.json`, `src/index.ts`, `SKILL.md`
+- [x] `specialists/performance`: `package.json`, `tsconfig.json`, `src/index.ts`, `SKILL.md`
+- [x] `.claude/commands/`: `consult.md`, `work.md`, `done.md`
+- [ ] Build verified (blocked: OOM on 32-bit Node with TypeScript 5.9.3 — root cause unknown)
 - [ ] `packages/cli`: `consilium` CLI — `install`, `add`, `remove` commands (lowest priority; use `npm link` for local dev)
 
 ## Key decisions

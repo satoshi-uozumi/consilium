@@ -1,0 +1,20 @@
+services:
+  security:
+    build: .
+    command: node specialists/security/dist/index.js
+    ports:
+      - "4001:4001"
+    environment:
+      - PORT=4001
+    volumes:
+      - ./.consilium:/app/.consilium
+
+  performance:
+    build: .
+    command: node specialists/performance/dist/index.js
+    ports:
+      - "4002:4002"
+    environment:
+      - PORT=4002
+    volumes:
+      - ./.consilium:/app/.consilium
