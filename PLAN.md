@@ -53,7 +53,7 @@ consilium/
 - [x] Add `/review` — optional plan review command; specialists check plan before `/work`
 - [x] Remove `consult` and `review` MCP tools from `SpecialistServer` — only `get_skill` remains
 - [x] Write SKILL.md content for `security` and `performance` specialists (two-role: consulting + reviewing)
-- [ ] `packages/cli`: `consilium` CLI — `install`, `add`, `remove` commands (lowest priority; use `npm link` for local dev)
+- [x] `packages/cli`: `consilium` CLI — `install`, `uninstall` commands; `npx consilium install` sets up a project
 
 ## Key decisions
 

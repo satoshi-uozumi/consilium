@@ -2,6 +2,7 @@
   "files": [],
   "references": [
     { "path": "packages/specialist-sdk" },
+    { "path": "packages/cli" },
     { "path": "specialists/security" },
     { "path": "specialists/performance" }
   ]
