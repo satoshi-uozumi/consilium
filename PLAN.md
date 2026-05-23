@@ -48,6 +48,11 @@ consilium/
 - [x] `specialists/performance`: `package.json`, `tsconfig.json`, `src/index.ts`, `SKILL.md`
 - [x] `.claude/commands/`: `consult.md`, `work.md`, `done.md`
 - [x] Build verified (workaround: `reg` helper in `registerTools()` isolates `as any` cast — MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth)
+- [x] Redesign `/consult` to spawn sub-agents per specialist (keep main context clean)
+- [x] Update slash commands to use sub-agent pattern (`consult.md`, `done.md`)
+- [x] Add `/review` — optional plan review command; specialists check plan before `/work`
+- [x] Remove `consult` and `review` MCP tools from `SpecialistServer` — only `get_skill` remains
+- [x] Write SKILL.md content for `security` and `performance` specialists (two-role: consulting + reviewing)
 - [ ] `packages/cli`: `consilium` CLI — `install`, `add`, `remove` commands (lowest priority; use `npm link` for local dev)
 
 ## Key decisions
@@ -59,3 +64,6 @@ consilium/
 - Each specialist ships a default `SKILL.md`, user-overridable
 - Claude Code is the mediator — orchestrates via slash commands and SKILL.md, not a separate server
 - Distribution: `npm link` for local dev; npm publish or GitHub install for release (deferred)
+- Specialist consultation uses sub-agents: slash commands spawn a sub-agent per specialist with SKILL.md as context; only the distilled answer returns to main Claude — SKILL.md never pollutes the main conversation context
+- MCP server exposes only `get_skill`; all orchestration lives in the slash commands
+- Workflow: `/consult` → `plan.md` → (optional `/review`) → `/work` → `/done`
