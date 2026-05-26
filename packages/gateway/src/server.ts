@@ -4,24 +4,51 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-function loadSkill(specialistName: string): string {
-  const skillPath = path.resolve(process.cwd(), `.consilium/specialists/${specialistName}/SKILL.md`);
+const DEFAULT_SPECIALISTS_DIR = ".consilium/specialists";
+
+interface GatewayConfig {
+  port?: number;
+  specialistsDir?: string;
+  specialists?: string[];
+}
+
+function loadSkill(specialistName: string, specialistsDir: string): string {
+  const skillPath = path.resolve(process.cwd(), specialistsDir, specialistName, "SKILL.md");
   if (fs.existsSync(skillPath)) return fs.readFileSync(skillPath, "utf-8");
   return `# ${specialistName}\n\nNo SKILL.md found.`;
 }
 
 export class GatewayServer {
-  constructor(private readonly port: number) {}
+  constructor(private readonly defaultPort: number) {}
 
-  private discoverSpecialists(): string[] {
-    const dir = path.resolve(process.cwd(), ".consilium/specialists");
+  private loadConfig(): GatewayConfig {
+    const configPath = path.resolve(process.cwd(), ".consilium/config.json");
+    if (!fs.existsSync(configPath)) return {};
+    try {
+      return JSON.parse(fs.readFileSync(configPath, "utf-8")) as GatewayConfig;
+    } catch {
+      process.stderr.write("[consilium-gateway] warning: failed to parse .consilium/config.json — using defaults\n");
+      return {};
+    }
+  }
+
+  private discoverSpecialists(specialistsDir: string): string[] {
+    const dir = path.resolve(process.cwd(), specialistsDir);
     if (!fs.existsSync(dir)) return [];
     return fs.readdirSync(dir, { withFileTypes: true })
       .filter((e) => e.isDirectory() && fs.existsSync(path.join(dir, e.name, "SKILL.md")))
       .map((e) => e.name);
   }
 
-  private createMcpServer(specialists: string[]): McpServer {
+  private resolveSpecialists(names: string[], specialistsDir: string): string[] {
+    return names.filter((name) => {
+      const exists = fs.existsSync(path.resolve(process.cwd(), specialistsDir, name, "SKILL.md"));
+      if (!exists) process.stderr.write(`[consilium-gateway] warning: specialist "${name}" has no SKILL.md in ${specialistsDir} — skipping\n`);
+      return exists;
+    });
+  }
+
+  private createMcpServer(specialists: string[], specialistsDir: string): McpServer {
     const server = new McpServer({ name: "consilium-gateway", version: "0.1.0" });
     for (const name of specialists) {
       // TS2589: MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
@@ -29,16 +56,22 @@ export class GatewayServer {
       (server.registerTool as any)(
         `${name}__get_skill`,
         { description: `Return the SKILL.md for the ${name} specialist` },
-        async () => ({ content: [{ type: "text" as const, text: loadSkill(name) }] })
+        async () => ({ content: [{ type: "text" as const, text: loadSkill(name, specialistsDir) }] })
       );
     }
     return server;
   }
 
   start(): Promise<void> {
-    const specialists = this.discoverSpecialists();
+    const config = this.loadConfig();
+    const port = config.port ?? this.defaultPort;
+    const specialistsDir = config.specialistsDir ?? DEFAULT_SPECIALISTS_DIR;
+    const specialists = config.specialists
+      ? this.resolveSpecialists(config.specialists, specialistsDir)
+      : this.discoverSpecialists(specialistsDir);
+
     if (specialists.length === 0) {
-      process.stderr.write("[consilium-gateway] warning: no specialists found in .consilium/specialists/ — add a SKILL.md to get started\n");
+      process.stderr.write(`[consilium-gateway] warning: no specialists found in ${specialistsDir} — add a SKILL.md to get started\n`);
     } else {
       process.stderr.write(`[consilium-gateway] loaded specialists: ${specialists.join(", ")}\n`);
     }
@@ -62,7 +95,7 @@ export class GatewayServer {
         if (req.method === "POST" && !sessionId) {
           const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });
           transport.onclose = () => sessions.delete(transport.sessionId!);
-          await this.createMcpServer(specialists).connect(transport);
+          await this.createMcpServer(specialists, specialistsDir).connect(transport);
           sessions.set(transport.sessionId!, transport);
           let body = "";
           req.on("data", (chunk) => { body += chunk; });
@@ -92,8 +125,8 @@ export class GatewayServer {
         }
       });
 
-      httpServer.listen(this.port, () => {
-        process.stderr.write(`[consilium-gateway] listening on port ${this.port}\n`);
+      httpServer.listen(port, () => {
+        process.stderr.write(`[consilium-gateway] listening on port ${port}\n`);
         resolve();
       });
 

@@ -75,6 +75,26 @@ docker compose up consilium-gateway
 
 The gateway scans `/app/.consilium/specialists/` at startup and loads whatever it finds. No configuration needed — add a specialist directory, restart the gateway.
 
+### Configuration
+
+Create `.consilium/config.json` to control gateway behaviour:
+
+```json
+{
+  "port": 4000,
+  "specialistsDir": ".consilium/specialists",
+  "specialists": ["security", "architecture"]
+}
+```
+
+| Field | Default | Description |
+|---|---|---|
+| `port` | `PORT` env or `4000` | Port the gateway listens on |
+| `specialistsDir` | `.consilium/specialists` | Directory to discover specialists from |
+| `specialists` | _(auto-discover all)_ | Explicit list to load; useful when the library is large |
+
+All fields are optional. With no config file the gateway auto-discovers every specialist found in `specialistsDir`.
+
 ## Uninstall
 
 ```sh
