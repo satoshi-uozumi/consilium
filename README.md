@@ -76,8 +76,8 @@ consilium/
 │   ├── gateway/          # aggregates all specialists into a single MCP server
 │   └── cli/              # consilium CLI (install / uninstall)
 ├── specialists/
-│   ├── security/         # security specialist
-│   └── performance/      # performance specialist
+│   ├── security/SKILL.md    # reference example
+│   └── performance/SKILL.md # reference example
 ├── Dockerfile
 └── docker-compose.yml
 ```

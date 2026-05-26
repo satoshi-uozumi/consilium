@@ -2,8 +2,7 @@
   "name": "consilium",
   "private": true,
   "workspaces": [
-    "packages/*",
-    "specialists/*"
+    "packages/*"
   ],
   "scripts": {
     "build": "tsc --build",

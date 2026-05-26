@@ -3,8 +3,6 @@
   "references": [
     { "path": "packages/specialist-sdk" },
     { "path": "packages/gateway" },
-    { "path": "packages/cli" },
-    { "path": "specialists/security" },
-    { "path": "specialists/performance" }
+    { "path": "packages/cli" }
   ]
 }
