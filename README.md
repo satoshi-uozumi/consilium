@@ -5,13 +5,23 @@ Composable specialist MCP servers for Claude Code. Bring in domain expertise on 
 ## Prerequisites
 
 - [Claude Code](https://claude.ai/code)
+- Node.js 20+
 
 ## Install
 
-Run this in any project where you want Consilium:
+Clone and build once:
 
 ```sh
-npx consilium install
+git clone https://github.com/your-org/consilium.git
+cd consilium
+npm install && npm run build
+npm link packages/cli   # makes `consilium` available globally
+```
+
+Then run this in any project where you want Consilium:
+
+```sh
+consilium install
 ```
 
 This sets up the project for Consilium use:
@@ -128,7 +138,7 @@ The gateway validates tokens against the issuer's JWKS endpoint (discovered via 
 ## Uninstall
 
 ```sh
-npx consilium uninstall
+consilium uninstall
 ```
 
 ## Project structure
