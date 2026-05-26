@@ -97,12 +97,12 @@ Create `.consilium/config.json` to control gateway behaviour:
 }
 ```
 
-| Field                    | Default                  | Description                                              |
-|--------------------------|--------------------------|----------------------------------------------------------|
-| `port`                   | `PORT` env or `4000`     | Port the gateway listens on                              |
-| `local.specialistsDir`   | `.consilium/specialists` | Directory to discover local specialists from             |
-| `local.specialists`      | _(auto-discover all)_    | Explicit list of local specialists to load               |
-| `remote`                 | _(none)_                 | Remote specialists — `{ name, url }` each served elsewhere |
+| Field                  | Default                    | Description                                        |
+|------------------------|----------------------------|----------------------------------------------------|
+| `port`                 | `PORT` env or `4000`       | Port the gateway listens on                        |
+| `local.specialistsDir` | `.consilium/specialists`   | Directory to discover local specialists from       |
+| `local.specialists`    | _(auto-discover all)_      | Explicit list of local specialists to load         |
+| `remote`               | _(none)_                   | Remote specialists — `{ name, url }` array         |
 
 All fields are optional. With no config file the gateway auto-discovers every specialist found in `local.specialistsDir`. Remote specialists are registered directly in `.claude/settings.json` by `consilium start` — the local gateway does not proxy them.
 
