@@ -24,12 +24,49 @@ export class GatewayServer {
   private loadConfig(): GatewayConfig {
     const configPath = path.resolve(process.cwd(), ".consilium/config.json");
     if (!fs.existsSync(configPath)) return {};
+
+    let raw: Record<string, unknown>;
     try {
-      return JSON.parse(fs.readFileSync(configPath, "utf-8")) as GatewayConfig;
+      raw = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Record<string, unknown>;
     } catch {
       process.stderr.write("[consilium-gateway] warning: failed to parse .consilium/config.json — using defaults\n");
       return {};
     }
+
+    const known = new Set(["port", "specialistsDir", "specialists"]);
+    for (const key of Object.keys(raw)) {
+      if (!known.has(key)) {
+        process.stderr.write(`[consilium-gateway] warning: unknown config key "${key}" — ignored\n`);
+      }
+    }
+
+    const config: GatewayConfig = {};
+
+    if ("port" in raw) {
+      if (typeof raw.port !== "number") {
+        process.stderr.write(`[consilium-gateway] warning: config "port" must be a number — ignored\n`);
+      } else {
+        config.port = raw.port;
+      }
+    }
+
+    if ("specialistsDir" in raw) {
+      if (typeof raw.specialistsDir !== "string") {
+        process.stderr.write(`[consilium-gateway] warning: config "specialistsDir" must be a string — ignored\n`);
+      } else {
+        config.specialistsDir = raw.specialistsDir;
+      }
+    }
+
+    if ("specialists" in raw) {
+      if (!Array.isArray(raw.specialists) || !raw.specialists.every((s) => typeof s === "string")) {
+        process.stderr.write(`[consilium-gateway] warning: config "specialists" must be an array of strings — ignored\n`);
+      } else {
+        config.specialists = raw.specialists as string[];
+      }
+    }
+
+    return config;
   }
 
   private discoverSpecialists(specialistsDir: string): string[] {
