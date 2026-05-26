@@ -7,7 +7,8 @@
   "scripts": {
     "build": "tsc --build",
     "rebuild": "tsc --build --clean && tsc --build",
-    "clean": "tsc --build --clean"
+    "clean": "tsc --build --clean",
+    "test": "npm run build && node --test test/**/*.test.mjs"
   },
   "devDependencies": {
     "typescript": "^5.8.0"
