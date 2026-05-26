@@ -14,7 +14,24 @@ Run this in any project where you want Consilium:
 npx consilium install
 ```
 
-This creates `.consilium/plans/` and `.consilium/specialists/`, installs the `/cs:*` slash commands, and adds `.consilium/` to `.gitignore`.
+This sets up the project for Consilium use:
+
+```
+.consilium/
+├── plans/          ← where feature plans are written
+└── specialists/    ← add your SKILL.md directories here
+
+.claude/
+└── commands/
+    ├── consult.md  ← /cs:consult
+    ├── review.md   ← /cs:review
+    ├── work.md     ← /cs:work
+    └── done.md     ← /cs:done
+
+.gitignore          ← .consilium/ appended
+```
+
+MCP servers are **not** registered at install time — run `consilium start` to start the gateway and register specialists.
 
 ## Usage
 
