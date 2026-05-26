@@ -5,6 +5,8 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const TEMPLATES_DIR = path.join(__dirname, '..', 'templates', 'commands');
+const SPECIALISTS_TEMPLATES_DIR = path.join(__dirname, '..', 'templates', 'specialists');
+const CONFIG_TEMPLATE = path.join(__dirname, '..', 'templates', 'config.json');
 
 interface RemoteSpecialist {
   name: string;
@@ -58,6 +60,23 @@ function install(): void {
   fs.mkdirSync(path.join(cwd, '.consilium', 'plans'), { recursive: true });
   fs.mkdirSync(path.join(cwd, '.consilium', 'specialists'), { recursive: true });
   console.log('Created .consilium/plans/ and .consilium/specialists/');
+
+  // Default specialists — skip if already present
+  for (const name of fs.readdirSync(SPECIALISTS_TEMPLATES_DIR)) {
+    const dest = path.join(cwd, '.consilium', 'specialists', name, 'SKILL.md');
+    if (!fs.existsSync(dest)) {
+      fs.mkdirSync(path.dirname(dest), { recursive: true });
+      fs.copyFileSync(path.join(SPECIALISTS_TEMPLATES_DIR, name, 'SKILL.md'), dest);
+      console.log(`Created specialist: ${name}`);
+    }
+  }
+
+  // Default config — skip if already present
+  const configDest = path.join(cwd, '.consilium', 'config.json');
+  if (!fs.existsSync(configDest)) {
+    fs.copyFileSync(CONFIG_TEMPLATE, configDest);
+    console.log('Created .consilium/config.json');
+  }
 
   const commandsDir = path.join(cwd, '.claude', 'commands');
   fs.mkdirSync(commandsDir, { recursive: true });
