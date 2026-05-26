@@ -6,5 +6,9 @@
   },
   "remote": [
     { "name": "infra", "url": "http://remote-host:4000/infra" }
-  ]
+  ],
+  "auth": {
+    "issuer": "https://accounts.google.com",
+    "audience": "consilium-gateway"
+  }
 }

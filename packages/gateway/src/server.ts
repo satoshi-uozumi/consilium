@@ -4,6 +4,7 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+import { type AuthConfig, validateBearerToken, protectedResourceMetadata } from "./auth.js";
 
 const DEFAULT_SPECIALISTS_DIR = ".consilium/specialists";
 
@@ -19,6 +20,7 @@ interface GatewayConfig {
     specialists?: string[];
   };
   remote?: RemoteSpecialist[];
+  auth?: AuthConfig;
 }
 
 function loadSkill(specialistName: string, specialistsDir: string): string {
@@ -42,7 +44,7 @@ export class GatewayServer {
       return {};
     }
 
-    const known = new Set(["port", "local", "remote"]);
+    const known = new Set(["port", "local", "remote", "auth"]);
     for (const key of Object.keys(raw)) {
       if (!known.has(key)) {
         process.stderr.write(`[consilium-gateway] warning: unknown config key "${key}" — ignored\n`);
@@ -103,6 +105,19 @@ export class GatewayServer {
       }
     }
 
+    if ("auth" in raw) {
+      if (raw.auth === null || typeof raw.auth !== "object") {
+        process.stderr.write(`[consilium-gateway] warning: config "auth" must be an object — ignored\n`);
+      } else {
+        const a = raw.auth as Record<string, unknown>;
+        if (typeof a.issuer !== "string" || typeof a.audience !== "string") {
+          process.stderr.write(`[consilium-gateway] warning: config "auth" requires string fields "issuer" and "audience" — ignored\n`);
+        } else {
+          config.auth = { issuer: a.issuer, audience: a.audience };
+        }
+      }
+    }
+
     return config;
   }
 
@@ -139,6 +154,11 @@ export class GatewayServer {
     const port = config.port ?? this.defaultPort;
     const specialistsDir = config.local?.specialistsDir ?? DEFAULT_SPECIALISTS_DIR;
     const remoteSpecialists = config.remote ?? [];
+    const auth = config.auth;
+
+    if (auth) {
+      process.stderr.write(`[consilium-gateway] auth enabled — issuer: ${auth.issuer}\n`);
+    }
 
     let localNames: string[];
     if (config.local?.specialists) {
@@ -174,8 +194,32 @@ export class GatewayServer {
           return;
         }
 
-        // Route by first path segment: /<specialist-name>[/...]
         const urlPath = (req.url ?? "/").split("?")[0];
+
+        // OAuth Protected Resource Metadata (RFC 9728) — always unauthenticated
+        if (auth && urlPath === "/.well-known/oauth-protected-resource") {
+          const gatewayUrl = `http://${req.headers.host}`;
+          res.writeHead(200, { "Content-Type": "application/json" });
+          res.end(JSON.stringify(protectedResourceMetadata(gatewayUrl, auth)));
+          return;
+        }
+
+        // Validate Bearer token when auth is configured
+        if (auth) {
+          try {
+            await validateBearerToken(req.headers.authorization, auth);
+          } catch {
+            const gatewayUrl = `http://${req.headers.host}`;
+            res.writeHead(401, {
+              "Content-Type": "application/json",
+              "WWW-Authenticate": `Bearer realm="consilium", resource_metadata="${gatewayUrl}/.well-known/oauth-protected-resource"`,
+            });
+            res.end(JSON.stringify({ error: "Unauthorized" }));
+            return;
+          }
+        }
+
+        // Route by first path segment: /<specialist-name>[/...]
         const specialistName = urlPath.split("/").filter(Boolean)[0];
 
         if (!specialistName || !allSessions.has(specialistName)) {

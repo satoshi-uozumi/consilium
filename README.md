@@ -105,8 +105,25 @@ For remote specialists, no local gateway is needed — `consilium start` registe
 | `local.specialistsDir` | `.consilium/specialists`   | Directory to discover local specialists from       |
 | `local.specialists`    | _(auto-discover all)_      | Explicit list of local specialists to load         |
 | `remote`               | _(none)_                   | Remote specialists — `{ name, url }` array         |
+| `auth.issuer`          | _(none)_                   | OAuth authorization server URL (enables auth)      |
+| `auth.audience`        | _(none)_                   | Expected `aud` claim in bearer tokens              |
 
 All fields are optional. With no config file the gateway auto-discovers every specialist found in `local.specialistsDir`. Remote specialists are registered directly in `.claude/settings.json` by `consilium start` — the local gateway does not proxy them.
+
+### OAuth (remote gateways only)
+
+When `auth` is set, the gateway requires a valid Bearer token on every request. Omit `auth` for local gateways — no token needed.
+
+```json
+{
+  "auth": {
+    "issuer": "https://accounts.google.com",
+    "audience": "consilium-gateway"
+  }
+}
+```
+
+The gateway validates tokens against the issuer's JWKS endpoint (discovered via OIDC). Claude Code handles the token acquisition flow natively — it reads the `/.well-known/oauth-protected-resource` metadata the gateway exposes and runs the OAuth exchange automatically.
 
 ## Uninstall
 

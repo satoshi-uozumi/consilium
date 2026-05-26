@@ -42,3 +42,4 @@ See `README.md` for the full spec.
 - TS2589 workaround: `as any` cast on `server.registerTool` — MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
 - Session ID must be pre-generated before `handleRequest` — generate UUID upfront, pass via closure to `sessionIdGenerator`, use same value as map key; reading `transport.sessionId` after the fact stores `undefined`
 - Integration tests in `test/` using `node:test`; run with `npm test` (builds first); `test/helpers/` provides `createTestEnv()`, `startGateway()`, and MCP request helpers for reuse across test files
+- OAuth: optional `auth.issuer` + `auth.audience` in config enables Bearer token validation via `jose`; JWKS discovered from issuer OIDC metadata; `/.well-known/oauth-protected-resource` always unauthenticated (RFC 9728); local gateways omit `auth` entirely
