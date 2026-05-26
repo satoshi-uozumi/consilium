@@ -53,13 +53,27 @@ Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
 
 ### Running the gateway
 
-Start the gateway before running `/cs:consult`:
+The gateway is a Docker container that must be able to read `.consilium/specialists/` from your project. `docker-compose.yml` in this repo is a reference template — adapt it to your project context.
 
-```sh
-docker compose run gateway     # port 4000
+The critical piece is the volume mount: the container's `/app/.consilium` must point to your project's `.consilium/` directory. Example for running from your project root:
+
+```yaml
+services:
+  consilium-gateway:
+    image: consilium-gateway
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+    volumes:
+      - ./.consilium:/app/.consilium
 ```
 
-The gateway scans `.consilium/specialists/` at startup and loads whatever it finds. No configuration needed — add a directory, restart the gateway.
+```sh
+docker compose up consilium-gateway
+```
+
+The gateway scans `/app/.consilium/specialists/` at startup and loads whatever it finds. No configuration needed — add a specialist directory, restart the gateway.
 
 ## Uninstall
 
