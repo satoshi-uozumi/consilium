@@ -29,9 +29,7 @@ See `README.md` for the full spec.
 
 ## Key decisions
 
-- Single gateway entry point — no per-specialist images or containers; `examples/Dockerfile` is a reference template
-- npm workspaces: `packages/*` only; `examples/` contains reference material (Docker files, sample config, sample specialists)
-- `docker compose run gateway` on demand — no persistent stack
+- npm workspaces: `packages/*` only; `examples/` contains reference material (sample config, sample specialists)
 - Transport: StreamableHTTP with per-session transport+McpServer instances (avoids local-path MCP re-entrancy deadlock and supports concurrent clients)
 - Specialists are directories: `<specialistsDir>/<name>/SKILL.md` — gateway auto-discovers at startup, no config required
 - `examples/specialists/security/` and `examples/specialists/performance/` are reference examples only — not built, not run

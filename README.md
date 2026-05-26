@@ -4,7 +4,6 @@ Composable specialist MCP servers for Claude Code. Bring in domain expertise on 
 
 ## Prerequisites
 
-- [Docker](https://docs.docker.com/get-docker/)
 - [Claude Code](https://claude.ai/code)
 
 ## Install
@@ -51,36 +50,16 @@ Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
 
 `SKILL.md` should describe the domain, the review criteria, and the output format expected of the specialist. See `examples/specialists/security/SKILL.md` and `examples/specialists/performance/SKILL.md` in this repo for reference examples.
 
-### Running the gateway — CLI (local)
-
-The simplest way. No Docker required.
+### Running the gateway
 
 ```sh
 consilium start   # spawns gateway, registers per-specialist MCP entries in .claude/settings.json
 consilium stop    # stops gateway, removes MCP entries
 ```
 
-`consilium start` reads `.consilium/config.json` (if present), discovers local specialists, starts the gateway, and writes one `consilium-<name>` MCP entry per specialist into `.claude/settings.json`. `consilium stop` reverses both steps.
+`consilium start` reads `.consilium/config.json` (if present), discovers local specialists, starts the gateway as a background Node process, and writes one `consilium-<name>` MCP entry per specialist into `.claude/settings.json`. `consilium stop` reverses both steps.
 
-### Running the gateway — Docker
-
-For containerised or production deployments. `examples/docker-compose.yml` is a reference template — adapt it to your context. The critical piece is the volume mount: map your project's `.consilium/` into the container at `/app/.consilium/`:
-
-```yaml
-services:
-  consilium-gateway:
-    image: consilium-gateway
-    ports:
-      - "4000:4000"
-    environment:
-      - PORT=4000
-    volumes:
-      - ./.consilium:/app/.consilium
-```
-
-```sh
-docker compose up consilium-gateway
-```
+For remote specialists, no local gateway is needed — `consilium start` registers their URLs directly in `.claude/settings.json` and skips the gateway.
 
 ### Configuration
 
@@ -122,8 +101,6 @@ consilium/
 │   ├── gateway/          # MCP gateway — multiplexes specialists, one McpServer per path
 │   └── cli/              # consilium CLI (install / start / stop / uninstall)
 └── examples/
-    ├── Dockerfile
-    ├── docker-compose.yml
     ├── config.json                  # sample .consilium/config.json
     └── specialists/
         ├── security/SKILL.md        # reference specialist
