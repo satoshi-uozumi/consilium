@@ -67,6 +67,25 @@ Existing files are never overwritten — safe to re-run. MCP servers are **not**
 
 Claude Code suggests relevant specialists (e.g. security, performance), consults each via a sub-agent, reconciles any conflicts, and writes `.consilium/plans/user-auth/plan.md`.
 
+## Why multiple specialists?
+
+A single agent has no internal disagreement to surface. Two specialists with different domain instincts produce genuine conflicts — and the reconciliation process catches design decisions that would otherwise be implicit.
+
+Real example from a consultation on adding observability to the gateway:
+
+```
+Conflicts to resolve:
+- Log format: TypeScript specialist → JSONL; MCP specialist → TSV.
+  Surfacing this for you.
+- mkdirSync placement: TypeScript says once at startup; MCP says
+  per-invocation. Clear winner: startup. Reconciled.
+- direction field: MCP proposed it for future output tracking.
+  Gateway can't see output tokens (they live in Claude's inference)
+  — omit until output tracking is feasible. Reconciled.
+```
+
+The `direction` field rejection is the kind of insight a single-agent approach would miss: MCP specialist proposed it, TypeScript specialist didn't, and the synthesis correctly killed it for a real architectural reason. You get the conflict surfaced, not buried.
+
 ## Specialists
 
 A specialist is a directory with a single `SKILL.md` file that defines domain expertise. Each specialist runs as its own MCP server, served at `/<name>` on the gateway port. Claude Code connects to each specialist independently as `consilium-<name>`.
