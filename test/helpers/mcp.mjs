@@ -4,7 +4,7 @@ import http from "http";
  * Makes a StreamableHTTP MCP POST request.
  * Returns { status, sessionId, body } where body is parsed JSON.
  */
-export function post(port, path, body, sessionId) {
+export function post(port, path, body, sessionId, authHeader) {
   return new Promise((resolve, reject) => {
     const payload = JSON.stringify(body);
     const headers = {
@@ -13,6 +13,7 @@ export function post(port, path, body, sessionId) {
       "Content-Length": Buffer.byteLength(payload),
     };
     if (sessionId) headers["mcp-session-id"] = sessionId;
+    if (authHeader) headers["authorization"] = authHeader;
 
     const req = http.request(
       { hostname: "localhost", port, path, method: "POST", headers },

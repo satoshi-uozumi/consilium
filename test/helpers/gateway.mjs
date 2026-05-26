@@ -22,6 +22,9 @@ export function createTestEnv() {
       mkdirSync(join(dir, ".consilium", "specialists", name), { recursive: true });
       writeFileSync(join(dir, ".consilium", "specialists", name, "SKILL.md"), skillContent);
     },
+    setConfig(config) {
+      writeFileSync(join(dir, ".consilium", "config.json"), JSON.stringify(config, null, 2));
+    },
     cleanup() {
       rmSync(dir, { recursive: true, force: true });
     },
