@@ -7,5 +7,5 @@ services:
     environment:
       - PORT=4000
     volumes:
-      - ./.consilium:/app/.consilium
+      - ./examples/specialists:/app/.consilium/specialists
 

@@ -49,11 +49,11 @@ Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
         └── SKILL.md
 ```
 
-`SKILL.md` should describe the domain, the review criteria, and the output format expected of the specialist. See `specialists/security/SKILL.md` and `specialists/performance/SKILL.md` in this repo for reference examples.
+`SKILL.md` should describe the domain, the review criteria, and the output format expected of the specialist. See `examples/specialists/security/SKILL.md` and `examples/specialists/performance/SKILL.md` in this repo for reference examples.
 
 ### Running the gateway
 
-The gateway is a Docker container that must be able to read `.consilium/specialists/` from your project. `docker-compose.yml` in this repo is a reference template — adapt it to your project context.
+The gateway is a Docker container that must be able to read `.consilium/specialists/` from your project. `examples/docker-compose.yml` in this repo is a reference template — adapt it to your project context.
 
 The critical piece is the volume mount: the container's `/app/.consilium` must point to your project's `.consilium/` directory. Example for running from your project root:
 
@@ -83,7 +83,7 @@ Create `.consilium/config.json` to control gateway behaviour:
 {
   "port": 4000,
   "specialistsDir": ".consilium/specialists",
-  "specialists": ["security", "architecture"]
+  "specialists": ["security", "performance"]
 }
 ```
 
@@ -108,9 +108,11 @@ consilium/
 ├── packages/
 │   ├── gateway/          # MCP gateway — discovers and serves specialists
 │   └── cli/              # consilium CLI (install / uninstall)
-├── specialists/
-│   ├── security/SKILL.md    # reference example
-│   └── performance/SKILL.md # reference example
-├── Dockerfile
-└── docker-compose.yml
+└── examples/
+    ├── Dockerfile
+    ├── docker-compose.yml
+    ├── config.json                  # sample .consilium/config.json
+    └── specialists/
+        ├── security/SKILL.md        # reference specialist
+        └── performance/SKILL.md     # reference specialist
 ```

@@ -29,12 +29,12 @@ See `README.md` for the full spec.
 
 ## Key decisions
 
-- Single `Dockerfile`, single gateway entry point — no per-specialist images or containers
-- npm workspaces: `packages/*` only (`specialists/` are SKILL.md examples, not packages)
+- Single gateway entry point — no per-specialist images or containers; `examples/Dockerfile` is a reference template
+- npm workspaces: `packages/*` only; `examples/` contains reference material (Docker files, sample config, sample specialists)
 - `docker compose run gateway` on demand — no persistent stack
 - Transport: StreamableHTTP with per-session transport+McpServer instances (avoids local-path MCP re-entrancy deadlock and supports concurrent clients)
 - Specialists are directories: `<specialistsDir>/<name>/SKILL.md` — gateway auto-discovers at startup, no config required
-- `specialists/security/` and `specialists/performance/` are reference examples only — not built, not run
+- `examples/specialists/security/` and `examples/specialists/performance/` are reference examples only — not built, not run
 - Gateway exposes one namespaced tool per specialist: `<name>__get_skill`; all orchestration lives in the slash commands
 - `.consilium/config.json` controls gateway behaviour: `port` (overrides `PORT` env), `specialistsDir` (default: `.consilium/specialists`), `specialists` (explicit list; omit to auto-discover all) — all fields optional
 - Slash commands use `cs:` prefix to avoid collision with other project commands
