@@ -36,7 +36,7 @@ See `README.md` for the full spec.
 - Each specialist is its own McpServer at `/<name>`, exposing a single `get_skill` tool; Claude Code connects as `consilium-<name>:get_skill`; all orchestration lives in the slash commands
 - `.consilium/config.json` controls gateway behaviour: `port` (overrides `PORT` env), `local.specialistsDir` (default: `.consilium/specialists`), `local.specialists` (explicit list; omit to auto-discover), `remote` (array of `{ name, url }` for remote specialists) — all fields optional
 - `consilium start` writes per-specialist `consilium-<name>` entries to `.claude/settings.json`; `consilium stop` removes them
-- Slash commands use `cs:` prefix to avoid collision with other project commands
+- Slash commands use `cs:` prefix to avoid collision with other project commands; installed to `.claude/commands/cs/` — Claude Code derives the namespace from the subdirectory name
 - Plans stored at `<feature-name>/plan.md`; feature name is a kebab-case slug derived from the description
 - Specialist consultation uses sub-agents — only the distilled result returns to main Claude; SKILL.md never accumulates in the main context
 - TS2589 workaround: `as any` cast on `server.registerTool` — MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
