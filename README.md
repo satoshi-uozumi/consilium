@@ -18,10 +18,10 @@ This sets up the project for Consilium use:
 
 ```
 .consilium/
-├── config.json                        ← default config (port: 4000)
+├── config.json                        ← default config (port, specialistsDir, specialists list)
 ├── plans/                             ← where feature plans are written
 └── specialists/
-    └── typescript/SKILL.md            ← bundled default specialist
+    └── typescript/SKILL.md            ← bundled default specialist (general TypeScript)
 
 .claude/
 └── commands/
@@ -56,7 +56,7 @@ Claude Code suggests relevant specialists (e.g. security, performance), consults
 
 A specialist is a directory with a single `SKILL.md` file that defines domain expertise. Each specialist runs as its own MCP server, served at `/<name>` on the gateway port. Claude Code connects to each specialist independently as `consilium-<name>`.
 
-The gateway auto-discovers all specialists in `.consilium/specialists/` at startup — just drop in a new directory and restart. To load only a subset, set `local.specialists` in `.consilium/config.json`.
+By default the bundled `config.json` lists specialists explicitly under `local.specialists`. To load all specialists in the directory automatically, remove that field — the gateway will discover every subdirectory with a `SKILL.md`.
 
 ### Adding a specialist
 
@@ -84,7 +84,7 @@ For remote specialists, no local gateway is needed — `consilium start` registe
 
 ### Configuration
 
-Create `.consilium/config.json` to control gateway behaviour:
+`.consilium/config.json` is created by `consilium install`. Edit it to control gateway behaviour:
 
 ```json
 {
