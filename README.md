@@ -37,6 +37,8 @@ Claude Code suggests relevant specialists (e.g. security, performance), consults
 
 A specialist is a directory with a single `SKILL.md` file that defines domain expertise. Each specialist runs as its own MCP server, served at `/<name>` on the gateway port. Claude Code connects to each specialist independently as `consilium-<name>`.
 
+The gateway auto-discovers all specialists in `.consilium/specialists/` at startup — just drop in a new directory and restart. To load only a subset, set `local.specialists` in `.consilium/config.json`.
+
 ### Adding a specialist
 
 Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
