@@ -84,11 +84,14 @@ Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
 ### Running the gateway
 
 ```sh
-consilium start   # spawns gateway, registers per-specialist MCP entries in .claude/settings.json
-consilium stop    # stops gateway, removes MCP entries
+consilium start         # spawns gateway in the background, registers per-specialist MCP entries
+consilium start -f      # foreground mode — logs stream to terminal, Ctrl+C stops and deregisters
+consilium stop          # stops background gateway, removes MCP entries
 ```
 
 `consilium start` reads `.consilium/config.json` (if present), discovers local specialists, starts the gateway as a background Node process, and writes one `consilium-<name>` MCP entry per specialist into `.claude/settings.json`. `consilium stop` reverses both steps.
+
+Use `consilium start -f` (or `--foreground`) when you want to see gateway logs directly or debug specialist behaviour.
 
 For remote specialists, no local gateway is needed — `consilium start` registers their URLs directly in `.claude/settings.json` and skips the gateway.
 
