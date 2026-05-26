@@ -1,7 +1,6 @@
 {
   "files": [],
   "references": [
-    { "path": "packages/specialist-sdk" },
     { "path": "packages/gateway" },
     { "path": "packages/cli" }
   ]

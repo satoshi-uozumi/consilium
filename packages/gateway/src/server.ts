@@ -4,7 +4,11 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
-import { loadSkill } from "@consilium/specialist-sdk";
+function loadSkill(specialistName: string): string {
+  const skillPath = path.resolve(process.cwd(), `.consilium/specialists/${specialistName}/SKILL.md`);
+  if (fs.existsSync(skillPath)) return fs.readFileSync(skillPath, "utf-8");
+  return `# ${specialistName}\n\nNo SKILL.md found.`;
+}
 
 export class GatewayServer {
   constructor(private readonly port: number) {}

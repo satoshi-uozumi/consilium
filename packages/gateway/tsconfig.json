@@ -12,7 +12,5 @@
     "esModuleInterop": true
   },
   "include": ["src"],
-  "references": [
-    { "path": "../../packages/specialist-sdk" }
-  ]
+  "references": []
 }

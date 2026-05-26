@@ -72,8 +72,7 @@ npx consilium uninstall
 ```
 consilium/
 ├── packages/
-│   ├── specialist-sdk/   # base SDK — StreamableHTTP server, SKILL.md loader, shared types
-│   ├── gateway/          # aggregates all specialists into a single MCP server
+│   ├── gateway/          # MCP gateway — discovers and serves specialists
 │   └── cli/              # consilium CLI (install / uninstall)
 ├── specialists/
 │   ├── security/SKILL.md    # reference example
