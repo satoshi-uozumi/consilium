@@ -65,7 +65,7 @@ Existing files are never overwritten — safe to re-run. MCP servers are **not**
 /cs:consult add JWT authentication to the API
 ```
 
-Claude Code suggests relevant specialists (e.g. security, performance), consults each via a sub-agent, reconciles any conflicts, and writes `user-auth/plan.md`.
+Claude Code suggests relevant specialists (e.g. security, performance), consults each via a sub-agent, reconciles any conflicts, and writes `.consilium/plans/user-auth/plan.md`.
 
 ## Specialists
 
