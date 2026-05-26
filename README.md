@@ -87,11 +87,11 @@ Create `.consilium/config.json` to control gateway behaviour:
 }
 ```
 
-| Field | Default | Description |
-|---|---|---|
-| `port` | `PORT` env or `4000` | Port the gateway listens on |
-| `specialistsDir` | `.consilium/specialists` | Directory to discover specialists from |
-| `specialists` | _(auto-discover all)_ | Explicit list to load; useful when the library is large |
+| Field            | Default                  | Description                                            |
+|------------------|--------------------------|--------------------------------------------------------|
+| `port`           | `PORT` env or `4000`     | Port the gateway listens on                            |
+| `specialistsDir` | `.consilium/specialists` | Directory to discover specialists from                 |
+| `specialists`    | _(auto-discover all)_    | Explicit list to load; useful when the library is large |
 
 All fields are optional. With no config file the gateway auto-discovers every specialist found in `specialistsDir`.
 
