@@ -18,20 +18,22 @@ This sets up the project for Consilium use:
 
 ```
 .consilium/
-├── plans/          ← where feature plans are written
-└── specialists/    ← add your SKILL.md directories here
+├── config.json                        ← default config (port: 4000)
+├── plans/                             ← where feature plans are written
+└── specialists/
+    └── typescript/SKILL.md            ← bundled default specialist
 
 .claude/
 └── commands/
-    ├── consult.md  ← /cs:consult
-    ├── review.md   ← /cs:review
-    ├── work.md     ← /cs:work
-    └── done.md     ← /cs:done
+    ├── consult.md                     ← /cs:consult
+    ├── review.md                      ← /cs:review
+    ├── work.md                        ← /cs:work
+    └── done.md                        ← /cs:done
 
-.gitignore          ← .consilium/ appended
+.gitignore                             ← .consilium/ appended
 ```
 
-MCP servers are **not** registered at install time — run `consilium start` to start the gateway and register specialists.
+Existing files are never overwritten — safe to re-run. MCP servers are **not** registered at install time — run `consilium start` to start the gateway and register specialists.
 
 ## Usage
 
