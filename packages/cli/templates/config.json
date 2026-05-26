@@ -1,6 +1,7 @@
 {
   "port": 4000,
   "local": {
-    "specialistsDir": ".consilium/specialists"
+    "specialistsDir": ".consilium/specialists",
+    "specialists": ["typescript"]
   }
 }
