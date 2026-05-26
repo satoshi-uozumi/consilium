@@ -1,6 +1,10 @@
 # Consilium
 
-Composable specialist MCP servers for Claude Code. Bring in domain expertise on demand — security, performance, or any custom domain — without bloating your CLAUDE.md.
+Smaller context means more accurate results. Loading all domain expertise into one Claude session doesn't just risk hitting the context limit — it degrades output quality from the first token.
+
+Consilium routes specialist consultations through sub-agents — security, performance, TypeScript idioms, whatever you need. Each specialist gets a clean, focused context and returns only a distilled answer. Your main session never accumulates domain knowledge it isn't actively using.
+
+Every other MCP tool aggregates more servers into one endpoint, making the context problem worse. Consilium treats context budget as a first-class constraint.
 
 ## Prerequisites
 
