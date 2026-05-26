@@ -101,22 +101,26 @@ function start(): void {
   const port = config.port ?? 4000;
   const { local, remote } = resolveSpecialists(cwd, config);
 
-  const gatewayEntry = require.resolve('@consilium/gateway');
-  const child = spawn(process.execPath, [gatewayEntry], {
-    detached: true,
-    stdio: 'ignore',
-    cwd,
-    env: { ...process.env, PORT: String(port) },
-  });
+  if (local.length > 0) {
+    const gatewayEntry = require.resolve('@consilium/gateway');
+    const child = spawn(process.execPath, [gatewayEntry], {
+      detached: true,
+      stdio: 'ignore',
+      cwd,
+      env: { ...process.env, PORT: String(port) },
+    });
 
-  if (!child.pid) {
-    console.error('Failed to start gateway.');
-    return;
+    if (!child.pid) {
+      console.error('Failed to start gateway.');
+      return;
+    }
+
+    child.unref();
+    fs.writeFileSync(pidFile, String(child.pid));
+    console.log(`Gateway started on port ${port} (PID ${child.pid})`);
+  } else {
+    console.log('No local specialists — skipping gateway.');
   }
-
-  child.unref();
-  fs.writeFileSync(pidFile, String(child.pid));
-  console.log(`Gateway started on port ${port} (PID ${child.pid})`);
 
   // Register per-specialist MCP entries in .claude/settings.json
   const settingsPath = path.join(cwd, '.claude', 'settings.json');
