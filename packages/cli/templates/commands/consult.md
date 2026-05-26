@@ -11,9 +11,9 @@ Run the Consilium `/cs:consult` workflow.
 1. Derive a short kebab-case slug from the feature description (e.g. "user authentication" → `user-auth`). This slug is the feature name used throughout.
 2. If the user hasn't stated a topic, ask what they need help with.
 3. Based on the topic and current codebase context, suggest which specialists are relevant (e.g. security, performance). List them and ask the user to confirm before proceeding.
-4. Ask the user: "Should I read the relevant codebase files now and pass them as context to the sub-agents (fewer sub-agent tool uses, but files enter this session's context), or let sub-agents explore the codebase themselves (more sub-agent tool uses, but this session stays clean)?"
-   - If yes (main Claude reads): use Grep/Glob to identify the relevant files for this feature, read them, and include the content in each sub-agent prompt.
-   - If no (sub-agents explore): pass only the feature description and let sub-agents find what they need.
+   - If the confirmed list has exactly 4 specialists: warn the user — "4 specialists is the recommended maximum; synthesis quality degrades beyond this. Proceed?" — and wait for confirmation.
+   - If the confirmed list has 5 or more specialists: warn the user — "5+ specialists is strongly discouraged; conflict synthesis becomes unreliable and expensive. Type 'override' to proceed anyway, or narrow the list." — and wait. Only continue if the user explicitly types 'override'.
+4. Use Grep/Glob to identify the relevant files for this feature, read them, and include the content in each sub-agent prompt. Tell the user which files you are passing as context. If the user prefers sub-agents to explore the codebase themselves (this session stays cleaner), they can say so and you skip this step.
 5. For each confirmed specialist, spawn a sub-agent. Do NOT read SKILL.md or call get_skill in this session — pass only the path or tool name to the sub-agent and let it retrieve the content itself.
    Sub-agent prompt must include:
    - For local specialists: "Read `.consilium/specialists/<name>/SKILL.md` and use it as your domain expertise. Do not summarise it — apply it."
