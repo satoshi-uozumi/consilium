@@ -1,20 +1,11 @@
 services:
-  security:
+  gateway:
     build: .
-    command: node specialists/security/dist/index.js
+    command: node packages/gateway/dist/index.js
     ports:
-      - "4001:4001"
+      - "4000:4000"
     environment:
-      - PORT=4001
+      - PORT=4000
     volumes:
       - ./.consilium:/app/.consilium
 
-  performance:
-    build: .
-    command: node specialists/performance/dist/index.js
-    ports:
-      - "4002:4002"
-    environment:
-      - PORT=4002
-    volumes:
-      - ./.consilium:/app/.consilium

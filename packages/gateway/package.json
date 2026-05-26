@@ -1,0 +1,17 @@
+{
+  "name": "@consilium/gateway",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc --build"
+  },
+  "dependencies": {
+    "@consilium/specialist-sdk": "*",
+    "@modelcontextprotocol/sdk": "^1.29.0"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "typescript": "^5.8.0"
+  }
+}

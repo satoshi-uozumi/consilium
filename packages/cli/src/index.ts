@@ -4,8 +4,7 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 const CONSILIUM_MCP_SERVERS: Record<string, { type: string; url: string }> = {
-  'consilium-security': { type: 'http', url: 'http://localhost:4001/mcp' },
-  'consilium-performance': { type: 'http', url: 'http://localhost:4002/mcp' },
+  'consilium': { type: 'http', url: 'http://localhost:4000/mcp' },
 };
 
 const TEMPLATES_DIR = path.join(__dirname, '..', 'templates', 'commands');
@@ -14,7 +13,8 @@ function install(): void {
   const cwd = process.cwd();
 
   fs.mkdirSync(path.join(cwd, '.consilium', 'plans'), { recursive: true });
-  console.log('Created .consilium/plans/');
+  fs.mkdirSync(path.join(cwd, '.consilium', 'specialists'), { recursive: true });
+  console.log('Created .consilium/plans/ and .consilium/specialists/');
 
   const commandsDir = path.join(cwd, '.claude', 'commands');
   fs.mkdirSync(commandsDir, { recursive: true });
@@ -68,7 +68,7 @@ function uninstall(): void {
     const mcpServers = settings.mcpServers as Record<string, unknown> | undefined;
     if (mcpServers) {
       for (const key of Object.keys(mcpServers)) {
-        if (key.startsWith('consilium-')) delete mcpServers[key];
+        if (key === 'consilium' || key.startsWith('consilium-')) delete mcpServers[key];
       }
       fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
       console.log('Removed MCP entries from .claude/settings.json');

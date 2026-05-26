@@ -15,7 +15,7 @@ Run this in any project where you want Consilium:
 npx consilium install
 ```
 
-This creates `.consilium/plans/`, installs the `/cs:*` slash commands, and registers the specialist MCP servers in `.claude/settings.json`.
+This creates `.consilium/plans/`, installs the `/cs:*` slash commands, and registers the gateway MCP server in `.claude/settings.json`.
 
 ## Usage
 
@@ -36,29 +36,30 @@ Claude Code suggests relevant specialists (e.g. security, performance), consults
 
 ## Specialists
 
-Specialists are Docker containers that expose domain expertise via a single MCP tool (`get_skill`). They run on demand — no persistent stack required.
+A specialist is a directory with a single `SKILL.md` file that defines domain expertise. The gateway discovers specialists automatically from `.consilium/specialists/` in your project and exposes each as a namespaced MCP tool (`<name>__get_skill`).
 
-Start a specialist before running `/cs:consult`:
+### Adding a specialist
+
+Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
+
+```
+.consilium/
+└── specialists/
+    └── architecture/
+        └── SKILL.md
+```
+
+`SKILL.md` should describe the domain, the review criteria, and the output format expected of the specialist. See `specialists/security/SKILL.md` and `specialists/performance/SKILL.md` in this repo for reference examples.
+
+### Running the gateway
+
+Start the gateway before running `/cs:consult`:
 
 ```sh
-docker compose run security    # port 4001
-docker compose run performance # port 4002
+docker compose run gateway     # port 4000
 ```
 
-Each specialist ships a default `SKILL.md` that defines its expertise. To override it, place a custom `SKILL.md` in `.consilium/<specialist-name>/SKILL.md`.
-
-To add a third-party or custom specialist, add its MCP entry manually to `.claude/settings.json`:
-
-```json
-{
-  "mcpServers": {
-    "consilium-my-specialist": {
-      "type": "http",
-      "url": "http://localhost:4003/mcp"
-    }
-  }
-}
-```
+The gateway scans `.consilium/specialists/` at startup and loads whatever it finds. No configuration needed — add a directory, restart the gateway.
 
 ## Uninstall
 
@@ -72,6 +73,7 @@ npx consilium uninstall
 consilium/
 ├── packages/
 │   ├── specialist-sdk/   # base SDK — StreamableHTTP server, SKILL.md loader, shared types
+│   ├── gateway/          # aggregates all specialists into a single MCP server
 │   └── cli/              # consilium CLI (install / uninstall)
 ├── specialists/
 │   ├── security/         # security specialist
