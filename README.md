@@ -39,10 +39,11 @@ This sets up the project for Consilium use:
 
 .claude/
 └── commands/
-    ├── consult.md                     ← /cs:consult
-    ├── review.md                      ← /cs:review
-    ├── work.md                        ← /cs:work
-    └── done.md                        ← /cs:done
+    └── cs/
+        ├── consult.md                 ← /cs:consult
+        ├── review.md                  ← /cs:review
+        ├── work.md                    ← /cs:work
+        └── done.md                    ← /cs:done
 
 .gitignore                             ← .consilium/ appended
 ```

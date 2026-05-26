@@ -78,12 +78,12 @@ function install(): void {
     console.log('Created .consilium/config.json');
   }
 
-  const commandsDir = path.join(cwd, '.claude', 'commands');
+  const commandsDir = path.join(cwd, '.claude', 'commands', 'cs');
   fs.mkdirSync(commandsDir, { recursive: true });
   for (const file of fs.readdirSync(TEMPLATES_DIR)) {
     fs.copyFileSync(path.join(TEMPLATES_DIR, file), path.join(commandsDir, file));
   }
-  console.log('Installed slash commands → .claude/commands/');
+  console.log('Installed slash commands → .claude/commands/cs/');
 
   const gitignorePath = path.join(cwd, '.gitignore');
   const entry = '.consilium/';
@@ -233,13 +233,13 @@ function uninstall(): void {
 
   removeMcpEntries(cwd);
 
-  const commandsDir = path.join(cwd, '.claude', 'commands');
+  const commandsDir = path.join(cwd, '.claude', 'commands', 'cs');
   if (fs.existsSync(commandsDir) && fs.existsSync(TEMPLATES_DIR)) {
     for (const file of fs.readdirSync(TEMPLATES_DIR)) {
       const target = path.join(commandsDir, file);
       if (fs.existsSync(target)) fs.rmSync(target);
     }
-    console.log('Removed slash commands from .claude/commands/');
+    console.log('Removed slash commands from .claude/commands/cs/');
   }
 
   console.log('\nConsilium uninstalled.');
