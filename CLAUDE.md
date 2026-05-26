@@ -35,8 +35,9 @@ See `README.md` for the full spec.
 - Transport: StreamableHTTP with per-session transport+McpServer instances (avoids local-path MCP re-entrancy deadlock and supports concurrent clients)
 - Specialists are directories: `<specialistsDir>/<name>/SKILL.md` — gateway auto-discovers at startup, no config required
 - `examples/specialists/security/` and `examples/specialists/performance/` are reference examples only — not built, not run
-- Gateway exposes one namespaced tool per specialist: `<name>__get_skill`; all orchestration lives in the slash commands
-- `.consilium/config.json` controls gateway behaviour: `port` (overrides `PORT` env), `specialistsDir` (default: `.consilium/specialists`), `specialists` (explicit list; omit to auto-discover all) — all fields optional
+- Each specialist is its own McpServer at `/<name>`, exposing a single `get_skill` tool; Claude Code connects as `consilium-<name>:get_skill`; all orchestration lives in the slash commands
+- `.consilium/config.json` controls gateway behaviour: `port` (overrides `PORT` env), `local.specialistsDir` (default: `.consilium/specialists`), `local.specialists` (explicit list; omit to auto-discover), `remote` (array of `{ name, url }` for remote specialists) — all fields optional
+- `consilium start` writes per-specialist `consilium-<name>` entries to `.claude/settings.json`; `consilium stop` removes them
 - Slash commands use `cs:` prefix to avoid collision with other project commands
 - Plans stored at `<feature-name>/plan.md`; feature name is a kebab-case slug derived from the description
 - Specialist consultation uses sub-agents — only the distilled result returns to main Claude; SKILL.md never accumulates in the main context

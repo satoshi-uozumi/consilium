@@ -12,7 +12,7 @@ Run the Consilium `/cs:consult` workflow.
 2. If the user hasn't stated a topic, ask what they need help with.
 3. Based on the topic and current codebase context, suggest which specialists are relevant (e.g. security, performance). List them and ask the user to confirm before proceeding.
 4. For each confirmed specialist:
-   a. Call the specialist's `get_skill` MCP tool to retrieve their SKILL.md.
+   a. Call `consilium-<name>:get_skill` to retrieve their SKILL.md (e.g. `consilium-security:get_skill` for the security specialist).
    b. Spawn a sub-agent with the following prompt:
       - System context: the full SKILL.md content
       - Task: the topic and any relevant codebase context

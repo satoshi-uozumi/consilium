@@ -15,7 +15,7 @@ Run this in any project where you want Consilium:
 npx consilium install
 ```
 
-This creates `.consilium/plans/`, installs the `/cs:*` slash commands, and registers the gateway MCP server in `.claude/settings.json`.
+This creates `.consilium/plans/` and `.consilium/specialists/`, installs the `/cs:*` slash commands, and adds `.consilium/` to `.gitignore`.
 
 ## Usage
 
@@ -36,7 +36,7 @@ Claude Code suggests relevant specialists (e.g. security, performance), consults
 
 ## Specialists
 
-A specialist is a directory with a single `SKILL.md` file that defines domain expertise. The gateway discovers specialists automatically from `.consilium/specialists/` in your project and exposes each as a namespaced MCP tool (`<name>__get_skill`).
+A specialist is a directory with a single `SKILL.md` file that defines domain expertise. Each specialist runs as its own MCP server, served at `/<name>` on the gateway port. Claude Code connects to each specialist independently as `consilium-<name>`.
 
 ### Adding a specialist
 
@@ -56,11 +56,11 @@ Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
 The simplest way. No Docker required.
 
 ```sh
-consilium start   # spawns gateway in the background on port 4000
-consilium stop    # stops it
+consilium start   # spawns gateway, registers per-specialist MCP entries in .claude/settings.json
+consilium stop    # stops gateway, removes MCP entries
 ```
 
-The gateway runs as a Node process in your project directory. Port is read from `.consilium/config.json` if present, otherwise defaults to 4000.
+`consilium start` reads `.consilium/config.json` (if present), discovers local specialists, starts the gateway, and writes one `consilium-<name>` MCP entry per specialist into `.claude/settings.json`. `consilium stop` reverses both steps.
 
 ### Running the gateway — Docker
 
@@ -89,18 +89,24 @@ Create `.consilium/config.json` to control gateway behaviour:
 ```json
 {
   "port": 4000,
-  "specialistsDir": ".consilium/specialists",
-  "specialists": ["security", "performance"]
+  "local": {
+    "specialistsDir": ".consilium/specialists",
+    "specialists": ["security"]
+  },
+  "remote": [
+    { "name": "infra", "url": "http://remote-host:4000/infra" }
+  ]
 }
 ```
 
-| Field            | Default                  | Description                                             |
-|------------------|--------------------------|---------------------------------------------------------|
-| `port`           | `PORT` env or `4000`     | Port the gateway listens on                             |
-| `specialistsDir` | `.consilium/specialists` | Directory to discover specialists from                  |
-| `specialists`    | _(auto-discover all)_    | Explicit list to load; useful when the library is large |
+| Field                    | Default                  | Description                                              |
+|--------------------------|--------------------------|----------------------------------------------------------|
+| `port`                   | `PORT` env or `4000`     | Port the gateway listens on                              |
+| `local.specialistsDir`   | `.consilium/specialists` | Directory to discover local specialists from             |
+| `local.specialists`      | _(auto-discover all)_    | Explicit list of local specialists to load               |
+| `remote`                 | _(none)_                 | Remote specialists — `{ name, url }` each served elsewhere |
 
-All fields are optional. With no config file the gateway auto-discovers every specialist found in `specialistsDir`.
+All fields are optional. With no config file the gateway auto-discovers every specialist found in `local.specialistsDir`. Remote specialists are registered directly in `.claude/settings.json` by `consilium start` — the local gateway does not proxy them.
 
 ## Uninstall
 
@@ -113,8 +119,8 @@ npx consilium uninstall
 ```
 consilium/
 ├── packages/
-│   ├── gateway/          # MCP gateway — discovers and serves specialists
-│   └── cli/              # consilium CLI (install / uninstall)
+│   ├── gateway/          # MCP gateway — multiplexes specialists, one McpServer per path
+│   └── cli/              # consilium CLI (install / start / stop / uninstall)
 └── examples/
     ├── Dockerfile
     ├── docker-compose.yml

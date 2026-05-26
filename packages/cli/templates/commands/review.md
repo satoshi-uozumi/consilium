@@ -11,7 +11,7 @@ Run the Consilium `/cs:review` workflow.
 1. Read `<feature-name>/plan.md`. If it doesn't exist, stop and tell the user to run `/cs:consult` first.
 2. Identify which specialists contributed to the plan (from the specialist sections in `<feature-name>/plan.md`).
 3. For each specialist, review the plan:
-   a. Call their `get_skill` MCP tool to retrieve their SKILL.md.
+   a. Call `consilium-<name>:get_skill` to retrieve their SKILL.md (e.g. `consilium-security:get_skill` for the security specialist).
    b. Spawn a sub-agent with the following context:
       - System context: the full SKILL.md content
       - Task: review the plan below from your domain perspective — return APPROVED or REJECTED with specific feedback

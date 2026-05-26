@@ -4,11 +4,53 @@ import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
 
-const CONSILIUM_MCP_SERVERS: Record<string, { type: string; url: string }> = {
-  'consilium': { type: 'http', url: 'http://localhost:4000/mcp' },
-};
-
 const TEMPLATES_DIR = path.join(__dirname, '..', 'templates', 'commands');
+
+interface RemoteSpecialist {
+  name: string;
+  url: string;
+}
+
+interface ConsiliumConfig {
+  port?: number;
+  local?: {
+    specialistsDir?: string;
+    specialists?: string[];
+  };
+  remote?: RemoteSpecialist[];
+}
+
+function readConfig(cwd: string): ConsiliumConfig {
+  const configPath = path.join(cwd, '.consilium', 'config.json');
+  if (!fs.existsSync(configPath)) return {};
+  try {
+    return JSON.parse(fs.readFileSync(configPath, 'utf8')) as ConsiliumConfig;
+  } catch {
+    return {};
+  }
+}
+
+function discoverLocalSpecialists(cwd: string, specialistsDir: string): string[] {
+  const dir = path.join(cwd, specialistsDir);
+  if (!fs.existsSync(dir)) return [];
+  return fs.readdirSync(dir, { withFileTypes: true })
+    .filter((e) => e.isDirectory() && fs.existsSync(path.join(dir, e.name, 'SKILL.md')))
+    .map((e) => e.name);
+}
+
+function resolveSpecialists(cwd: string, config: ConsiliumConfig): { local: string[]; remote: RemoteSpecialist[] } {
+  const specialistsDir = config.local?.specialistsDir ?? '.consilium/specialists';
+  const remote = config.remote ?? [];
+  if (!config.local?.specialists) {
+    return { local: discoverLocalSpecialists(cwd, specialistsDir), remote };
+  }
+  const local = config.local.specialists.filter((name) => {
+    const exists = fs.existsSync(path.join(cwd, specialistsDir, name, 'SKILL.md'));
+    if (!exists) console.warn(`warning: specialist "${name}" has no SKILL.md — skipping`);
+    return exists;
+  });
+  return { local, remote };
+}
 
 function install(): void {
   const cwd = process.cwd();
@@ -23,20 +65,6 @@ function install(): void {
     fs.copyFileSync(path.join(TEMPLATES_DIR, file), path.join(commandsDir, file));
   }
   console.log('Installed slash commands → .claude/commands/');
-
-  const clauseDir = path.join(cwd, '.claude');
-  fs.mkdirSync(clauseDir, { recursive: true });
-  const settingsPath = path.join(clauseDir, 'settings.json');
-  const settings = fs.existsSync(settingsPath)
-    ? (JSON.parse(fs.readFileSync(settingsPath, 'utf8')) as Record<string, unknown>)
-    : {};
-  const mcpServers = ((settings.mcpServers as Record<string, unknown>) ?? {});
-  for (const [name, config] of Object.entries(CONSILIUM_MCP_SERVERS)) {
-    mcpServers[name] = config;
-  }
-  settings.mcpServers = mcpServers;
-  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
-  console.log('Registered MCP servers → .claude/settings.json');
 
   const gitignorePath = path.join(cwd, '.gitignore');
   const entry = '.consilium/';
@@ -54,17 +82,6 @@ function install(): void {
   console.log('\nConsilium installed. Run `consilium start` to start the gateway.');
 }
 
-function readPort(cwd: string): number {
-  const configPath = path.join(cwd, '.consilium', 'config.json');
-  if (fs.existsSync(configPath)) {
-    try {
-      const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as Record<string, unknown>;
-      if (typeof config.port === 'number') return config.port;
-    } catch {}
-  }
-  return 4000;
-}
-
 function start(): void {
   const cwd = process.cwd();
   const pidFile = path.join(cwd, '.consilium', 'gateway.pid');
@@ -76,11 +93,14 @@ function start(): void {
       console.log(`Gateway already running (PID ${pid})`);
       return;
     } catch {
-      fs.rmSync(pidFile); // stale PID file
+      fs.rmSync(pidFile);
     }
   }
 
-  const port = readPort(cwd);
+  const config = readConfig(cwd);
+  const port = config.port ?? 4000;
+  const { local, remote } = resolveSpecialists(cwd, config);
+
   const gatewayEntry = require.resolve('@consilium/gateway');
   const child = spawn(process.execPath, [gatewayEntry], {
     detached: true,
@@ -97,10 +117,34 @@ function start(): void {
   child.unref();
   fs.writeFileSync(pidFile, String(child.pid));
   console.log(`Gateway started on port ${port} (PID ${child.pid})`);
+
+  // Register per-specialist MCP entries in .claude/settings.json
+  const settingsPath = path.join(cwd, '.claude', 'settings.json');
+  fs.mkdirSync(path.join(cwd, '.claude'), { recursive: true });
+  const settings = fs.existsSync(settingsPath)
+    ? (JSON.parse(fs.readFileSync(settingsPath, 'utf8')) as Record<string, unknown>)
+    : {};
+  const mcpServers = ((settings.mcpServers as Record<string, unknown>) ?? {});
+
+  for (const name of local) {
+    mcpServers[`consilium-${name}`] = { type: 'http', url: `http://localhost:${port}/${name}` };
+  }
+  for (const r of remote) {
+    mcpServers[`consilium-${r.name}`] = { type: 'http', url: r.url };
+  }
+
+  settings.mcpServers = mcpServers;
+  fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+
+  const allNames = [...local, ...remote.map((r) => r.name)];
+  if (allNames.length > 0) {
+    console.log(`Registered specialists: ${allNames.join(', ')}`);
+  }
 }
 
 function stop(): void {
-  const pidFile = path.join(process.cwd(), '.consilium', 'gateway.pid');
+  const cwd = process.cwd();
+  const pidFile = path.join(cwd, '.consilium', 'gateway.pid');
 
   if (!fs.existsSync(pidFile)) {
     console.log('Gateway is not running.');
@@ -115,6 +159,19 @@ function stop(): void {
     console.log('Gateway process not found — removing stale PID file.');
   }
   fs.rmSync(pidFile);
+
+  const settingsPath = path.join(cwd, '.claude', 'settings.json');
+  if (fs.existsSync(settingsPath)) {
+    const settings = JSON.parse(fs.readFileSync(settingsPath, 'utf8')) as Record<string, unknown>;
+    const mcpServers = settings.mcpServers as Record<string, unknown> | undefined;
+    if (mcpServers) {
+      for (const key of Object.keys(mcpServers)) {
+        if (key === 'consilium' || key.startsWith('consilium-')) delete mcpServers[key];
+      }
+      fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
+      console.log('Removed MCP entries from .claude/settings.json');
+    }
+  }
 }
 
 function uninstall(): void {
@@ -160,7 +217,7 @@ program
 
 program.command('install').description('Install Consilium into the current project').action(install);
 program.command('uninstall').description('Remove Consilium from the current project').action(uninstall);
-program.command('start').description('Start the gateway in the background').action(start);
-program.command('stop').description('Stop the gateway').action(stop);
+program.command('start').description('Start the gateway and register specialist MCP servers').action(start);
+program.command('stop').description('Stop the gateway and remove specialist MCP servers').action(stop);
 
 program.parse();

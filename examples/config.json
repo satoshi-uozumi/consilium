@@ -1,5 +1,10 @@
 {
   "port": 4000,
-  "specialistsDir": ".consilium/specialists",
-  "specialists": ["security", "performance"]
+  "local": {
+    "specialistsDir": ".consilium/specialists",
+    "specialists": ["security"]
+  },
+  "remote": [
+    { "name": "infra", "url": "http://remote-host:4000/infra" }
+  ]
 }

@@ -4,12 +4,21 @@ import path from "path";
 import { randomUUID } from "crypto";
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/streamableHttp.js";
+
 const DEFAULT_SPECIALISTS_DIR = ".consilium/specialists";
+
+interface RemoteSpecialist {
+  name: string;
+  url: string;
+}
 
 interface GatewayConfig {
   port?: number;
-  specialistsDir?: string;
-  specialists?: string[];
+  local?: {
+    specialistsDir?: string;
+    specialists?: string[];
+  };
+  remote?: RemoteSpecialist[];
 }
 
 function loadSkill(specialistName: string, specialistsDir: string): string {
@@ -33,7 +42,7 @@ export class GatewayServer {
       return {};
     }
 
-    const known = new Set(["port", "specialistsDir", "specialists"]);
+    const known = new Set(["port", "local", "remote"]);
     for (const key of Object.keys(raw)) {
       if (!known.has(key)) {
         process.stderr.write(`[consilium-gateway] warning: unknown config key "${key}" — ignored\n`);
@@ -50,19 +59,47 @@ export class GatewayServer {
       }
     }
 
-    if ("specialistsDir" in raw) {
-      if (typeof raw.specialistsDir !== "string") {
-        process.stderr.write(`[consilium-gateway] warning: config "specialistsDir" must be a string — ignored\n`);
+    if ("local" in raw) {
+      if (raw.local === null || typeof raw.local !== "object") {
+        process.stderr.write(`[consilium-gateway] warning: config "local" must be an object — ignored\n`);
       } else {
-        config.specialistsDir = raw.specialistsDir;
+        const local = raw.local as Record<string, unknown>;
+        config.local = {};
+        if ("specialistsDir" in local) {
+          if (typeof local.specialistsDir !== "string") {
+            process.stderr.write(`[consilium-gateway] warning: config "local.specialistsDir" must be a string — ignored\n`);
+          } else {
+            config.local.specialistsDir = local.specialistsDir;
+          }
+        }
+        if ("specialists" in local) {
+          if (!Array.isArray(local.specialists) || !local.specialists.every((s) => typeof s === "string")) {
+            process.stderr.write(`[consilium-gateway] warning: config "local.specialists" must be an array of strings — ignored\n`);
+          } else {
+            config.local.specialists = local.specialists as string[];
+          }
+        }
       }
     }
 
-    if ("specialists" in raw) {
-      if (!Array.isArray(raw.specialists) || !raw.specialists.every((s) => typeof s === "string")) {
-        process.stderr.write(`[consilium-gateway] warning: config "specialists" must be an array of strings — ignored\n`);
+    if ("remote" in raw) {
+      if (!Array.isArray(raw.remote)) {
+        process.stderr.write(`[consilium-gateway] warning: config "remote" must be an array — ignored\n`);
       } else {
-        config.specialists = raw.specialists as string[];
+        const entries: RemoteSpecialist[] = [];
+        for (const item of raw.remote) {
+          if (
+            item !== null &&
+            typeof item === "object" &&
+            typeof (item as Record<string, unknown>).name === "string" &&
+            typeof (item as Record<string, unknown>).url === "string"
+          ) {
+            entries.push(item as RemoteSpecialist);
+          } else {
+            process.stderr.write(`[consilium-gateway] warning: invalid remote entry — must be { name, url } — skipping\n`);
+          }
+        }
+        config.remote = entries;
       }
     }
 
@@ -77,7 +114,7 @@ export class GatewayServer {
       .map((e) => e.name);
   }
 
-  private resolveSpecialists(names: string[], specialistsDir: string): string[] {
+  private resolveLocalNames(names: string[], specialistsDir: string): string[] {
     return names.filter((name) => {
       const exists = fs.existsSync(path.resolve(process.cwd(), specialistsDir, name, "SKILL.md"));
       if (!exists) process.stderr.write(`[consilium-gateway] warning: specialist "${name}" has no SKILL.md in ${specialistsDir} — skipping\n`);
@@ -85,35 +122,45 @@ export class GatewayServer {
     });
   }
 
-  private createMcpServer(specialists: string[], specialistsDir: string): McpServer {
-    const server = new McpServer({ name: "consilium-gateway", version: "0.1.0" });
-    for (const name of specialists) {
-      // TS2589: MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (server.registerTool as any)(
-        `${name}__get_skill`,
-        { description: `Return the SKILL.md for the ${name} specialist` },
-        async () => ({ content: [{ type: "text" as const, text: loadSkill(name, specialistsDir) }] })
-      );
-    }
+  private createSpecialistServer(name: string, specialistsDir: string): McpServer {
+    const server = new McpServer({ name, version: "0.1.0" });
+    // TS2589: MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (server.registerTool as any)(
+      "get_skill",
+      { description: `Return the SKILL.md for the ${name} specialist` },
+      async () => ({ content: [{ type: "text" as const, text: loadSkill(name, specialistsDir) }] })
+    );
     return server;
   }
 
   start(): Promise<void> {
     const config = this.loadConfig();
     const port = config.port ?? this.defaultPort;
-    const specialistsDir = config.specialistsDir ?? DEFAULT_SPECIALISTS_DIR;
-    const specialists = config.specialists
-      ? this.resolveSpecialists(config.specialists, specialistsDir)
-      : this.discoverSpecialists(specialistsDir);
+    const specialistsDir = config.local?.specialistsDir ?? DEFAULT_SPECIALISTS_DIR;
+    const remoteSpecialists = config.remote ?? [];
 
-    if (specialists.length === 0) {
-      process.stderr.write(`[consilium-gateway] warning: no specialists found in ${specialistsDir} — add a SKILL.md to get started\n`);
+    let localNames: string[];
+    if (config.local?.specialists) {
+      localNames = this.resolveLocalNames(config.local.specialists, specialistsDir);
     } else {
-      process.stderr.write(`[consilium-gateway] loaded specialists: ${specialists.join(", ")}\n`);
+      localNames = this.discoverSpecialists(specialistsDir);
     }
 
-    const sessions = new Map<string, StreamableHTTPServerTransport>();
+    if (localNames.length === 0) {
+      process.stderr.write(`[consilium-gateway] warning: no local specialists found — add a SKILL.md to get started\n`);
+    } else {
+      process.stderr.write(`[consilium-gateway] serving: ${localNames.join(", ")}\n`);
+    }
+    if (remoteSpecialists.length > 0) {
+      process.stderr.write(`[consilium-gateway] remote (not served here): ${remoteSpecialists.map((r) => r.name).join(", ")}\n`);
+    }
+
+    // Per-specialist session pools: name → (sessionId → transport)
+    const allSessions = new Map<string, Map<string, StreamableHTTPServerTransport>>();
+    for (const name of localNames) {
+      allSessions.set(name, new Map());
+    }
 
     return new Promise((resolve, reject) => {
       const httpServer = http.createServer(async (req, res) => {
@@ -127,12 +174,23 @@ export class GatewayServer {
           return;
         }
 
+        // Route by first path segment: /<specialist-name>[/...]
+        const urlPath = (req.url ?? "/").split("?")[0];
+        const specialistName = urlPath.split("/").filter(Boolean)[0];
+
+        if (!specialistName || !allSessions.has(specialistName)) {
+          res.writeHead(404, { "Content-Type": "application/json" });
+          res.end(JSON.stringify({ error: "Specialist not found" }));
+          return;
+        }
+
+        const sessions = allSessions.get(specialistName)!;
         const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
         if (req.method === "POST" && !sessionId) {
           const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });
           transport.onclose = () => sessions.delete(transport.sessionId!);
-          await this.createMcpServer(specialists, specialistsDir).connect(transport);
+          await this.createSpecialistServer(specialistName, specialistsDir).connect(transport);
           sessions.set(transport.sessionId!, transport);
           let body = "";
           req.on("data", (chunk) => { body += chunk; });
