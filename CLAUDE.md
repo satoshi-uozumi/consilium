@@ -29,13 +29,14 @@ See `README.md` for the full spec.
 
 ## Key decisions
 
-- Single `Dockerfile`, per-specialist entry points — no separate image per specialist
-- npm workspaces: `packages/*` + `specialists/*`
-- `docker compose run <specialist>` on demand — no persistent stack
-- Transport: StreamableHTTP (avoids local-path MCP re-entrancy deadlock)
-- Each specialist ships a default `SKILL.md`, user-overridable via `.consilium/<specialist>/SKILL.md`
-- MCP server exposes only `get_skill`; all orchestration lives in the slash commands
+- Single `Dockerfile`, single gateway entry point — no per-specialist images or containers
+- npm workspaces: `packages/*` only (`specialists/` are SKILL.md examples, not packages)
+- `docker compose run gateway` on demand — no persistent stack
+- Transport: StreamableHTTP with per-session transport+McpServer instances (avoids local-path MCP re-entrancy deadlock and supports concurrent clients)
+- Specialists are directories: `.consilium/specialists/<name>/SKILL.md` — gateway auto-discovers at startup, no config required
+- `specialists/security/` and `specialists/performance/` are reference examples only — not built, not run
+- Gateway exposes one namespaced tool per specialist: `<name>__get_skill`; all orchestration lives in the slash commands
 - Slash commands use `cs:` prefix to avoid collision with other project commands
 - Plans stored at `<feature-name>/plan.md`; feature name is a kebab-case slug derived from the description
 - Specialist consultation uses sub-agents — only the distilled result returns to main Claude; SKILL.md never accumulates in the main context
-- TS2589 workaround: `reg()` helper in `registerTools()` isolates `as any` cast — MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
+- TS2589 workaround: `as any` cast on `server.registerTool` — MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
