@@ -188,10 +188,11 @@ export class GatewayServer {
         const sessionId = req.headers["mcp-session-id"] as string | undefined;
 
         if (req.method === "POST" && !sessionId) {
-          const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => randomUUID() });
-          transport.onclose = () => sessions.delete(transport.sessionId!);
+          const sid = randomUUID();
+          const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => sid });
+          transport.onclose = () => sessions.delete(sid);
           await this.createSpecialistServer(specialistName, specialistsDir).connect(transport);
-          sessions.set(transport.sessionId!, transport);
+          sessions.set(sid, transport);
           let body = "";
           req.on("data", (chunk) => { body += chunk; });
           req.on("end", async () => {
