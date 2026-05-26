@@ -51,11 +51,20 @@ Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
 
 `SKILL.md` should describe the domain, the review criteria, and the output format expected of the specialist. See `examples/specialists/security/SKILL.md` and `examples/specialists/performance/SKILL.md` in this repo for reference examples.
 
-### Running the gateway
+### Running the gateway — CLI (local)
 
-The gateway is a Docker container that must be able to read `.consilium/specialists/` from your project. `examples/docker-compose.yml` in this repo is a reference template — adapt it to your project context.
+The simplest way. No Docker required.
 
-The critical piece is the volume mount: the container's `/app/.consilium` must point to your project's `.consilium/` directory. Example for running from your project root:
+```sh
+consilium start   # spawns gateway in the background on port 4000
+consilium stop    # stops it
+```
+
+The gateway runs as a Node process in your project directory. Port is read from `.consilium/config.json` if present, otherwise defaults to 4000.
+
+### Running the gateway — Docker
+
+For containerised or production deployments. `examples/docker-compose.yml` is a reference template — adapt it to your context. The critical piece is the volume mount: map your project's `.consilium/` into the container at `/app/.consilium/`:
 
 ```yaml
 services:
@@ -73,8 +82,6 @@ services:
 docker compose up consilium-gateway
 ```
 
-The gateway scans `/app/.consilium/specialists/` at startup and loads whatever it finds. No configuration needed — add a specialist directory, restart the gateway.
-
 ### Configuration
 
 Create `.consilium/config.json` to control gateway behaviour:
@@ -87,10 +94,10 @@ Create `.consilium/config.json` to control gateway behaviour:
 }
 ```
 
-| Field            | Default                  | Description                                            |
-|------------------|--------------------------|--------------------------------------------------------|
-| `port`           | `PORT` env or `4000`     | Port the gateway listens on                            |
-| `specialistsDir` | `.consilium/specialists` | Directory to discover specialists from                 |
+| Field            | Default                  | Description                                             |
+|------------------|--------------------------|---------------------------------------------------------|
+| `port`           | `PORT` env or `4000`     | Port the gateway listens on                             |
+| `specialistsDir` | `.consilium/specialists` | Directory to discover specialists from                  |
 | `specialists`    | _(auto-discover all)_    | Explicit list to load; useful when the library is large |
 
 All fields are optional. With no config file the gateway auto-discovers every specialist found in `specialistsDir`.

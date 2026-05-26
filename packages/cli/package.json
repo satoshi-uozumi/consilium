@@ -10,6 +10,7 @@
     "build": "tsc --build"
   },
   "dependencies": {
+    "@consilium/gateway": "*",
     "commander": "^12.0.0"
   },
   "devDependencies": {

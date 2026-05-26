@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { spawn } from 'child_process';
 import { Command } from 'commander';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -50,7 +51,70 @@ function install(): void {
     console.log('Created .gitignore with .consilium/');
   }
 
-  console.log('\nConsilium installed. Start a specialist container and run /consult.');
+  console.log('\nConsilium installed. Run `consilium start` to start the gateway.');
+}
+
+function readPort(cwd: string): number {
+  const configPath = path.join(cwd, '.consilium', 'config.json');
+  if (fs.existsSync(configPath)) {
+    try {
+      const config = JSON.parse(fs.readFileSync(configPath, 'utf8')) as Record<string, unknown>;
+      if (typeof config.port === 'number') return config.port;
+    } catch {}
+  }
+  return 4000;
+}
+
+function start(): void {
+  const cwd = process.cwd();
+  const pidFile = path.join(cwd, '.consilium', 'gateway.pid');
+
+  if (fs.existsSync(pidFile)) {
+    const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim(), 10);
+    try {
+      process.kill(pid, 0);
+      console.log(`Gateway already running (PID ${pid})`);
+      return;
+    } catch {
+      fs.rmSync(pidFile); // stale PID file
+    }
+  }
+
+  const port = readPort(cwd);
+  const gatewayEntry = require.resolve('@consilium/gateway');
+  const child = spawn(process.execPath, [gatewayEntry], {
+    detached: true,
+    stdio: 'ignore',
+    cwd,
+    env: { ...process.env, PORT: String(port) },
+  });
+
+  if (!child.pid) {
+    console.error('Failed to start gateway.');
+    return;
+  }
+
+  child.unref();
+  fs.writeFileSync(pidFile, String(child.pid));
+  console.log(`Gateway started on port ${port} (PID ${child.pid})`);
+}
+
+function stop(): void {
+  const pidFile = path.join(process.cwd(), '.consilium', 'gateway.pid');
+
+  if (!fs.existsSync(pidFile)) {
+    console.log('Gateway is not running.');
+    return;
+  }
+
+  const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim(), 10);
+  try {
+    process.kill(pid);
+    console.log(`Gateway stopped (PID ${pid})`);
+  } catch {
+    console.log('Gateway process not found — removing stale PID file.');
+  }
+  fs.rmSync(pidFile);
 }
 
 function uninstall(): void {
@@ -96,5 +160,7 @@ program
 
 program.command('install').description('Install Consilium into the current project').action(install);
 program.command('uninstall').description('Remove Consilium from the current project').action(uninstall);
+program.command('start').description('Start the gateway in the background').action(start);
+program.command('stop').description('Stop the gateway').action(stop);
 
 program.parse();
