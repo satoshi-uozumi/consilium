@@ -100,9 +100,19 @@ consilium/
 ├── packages/
 │   ├── gateway/          # MCP gateway — multiplexes specialists, one McpServer per path
 │   └── cli/              # consilium CLI (install / start / stop / uninstall)
+├── test/
+│   ├── helpers/          # reusable startGateway() and MCP request helpers
+│   └── *.test.mjs        # integration tests (node:test)
 └── examples/
     ├── config.json                  # sample .consilium/config.json
     └── specialists/
         ├── security/SKILL.md        # reference specialist
         └── performance/SKILL.md     # reference specialist
+```
+
+## Development
+
+```sh
+npm run build   # compile TypeScript
+npm test        # build + run integration tests
 ```

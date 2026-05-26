@@ -40,3 +40,4 @@ See `README.md` for the full spec.
 - Plans stored at `<feature-name>/plan.md`; feature name is a kebab-case slug derived from the description
 - Specialist consultation uses sub-agents — only the distilled result returns to main Claude; SKILL.md never accumulates in the main context
 - TS2589 workaround: `as any` cast on `server.registerTool` — MCP SDK 1.29 dual-Zod compat types overflow TS5.9 instantiation depth
+- Integration tests in `test/` using `node:test`; run with `npm test` (builds first); `test/helpers/` provides `createTestEnv()`, `startGateway()`, and MCP request helpers for reuse across test files
