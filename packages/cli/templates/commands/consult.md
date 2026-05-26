@@ -12,7 +12,7 @@ Run the Consilium `/cs:consult` workflow.
 2. If the user hasn't stated a topic, ask what they need help with.
 3. Based on the topic and current codebase context, suggest which specialists are relevant (e.g. security, performance). List them and ask the user to confirm before proceeding.
 4. For each confirmed specialist:
-   a. Call `consilium-<name>:get_skill` to retrieve their SKILL.md (e.g. `consilium-security:get_skill` for the security specialist).
+   a. Retrieve their SKILL.md: call `consilium-<name>:get_skill` if the MCP tool is available in this session; otherwise read `.consilium/specialists/<name>/SKILL.md` directly. Either way the content goes only to the sub-agent — never into this session's context.
    b. Spawn a sub-agent with the following prompt:
       - System context: the full SKILL.md content
       - Task: the topic and any relevant codebase context
@@ -21,7 +21,7 @@ Run the Consilium `/cs:consult` workflow.
 5. If multiple specialists were consulted, identify conflicts between their recommendations:
    - Conflicts that are human judgment calls → surface as-is for the user to decide
    - Conflicts with an objectively better answer → reconcile into a single recommendation
-6. Write `<feature-name>/plan.md` with:
+6. Write `.consilium/plans/<feature-name>/plan.md` with:
    - One section per specialist with their recommendations
    - **Conflicts / Tradeoffs** section (if applicable)
    - **Tasks** checklist for implementation
