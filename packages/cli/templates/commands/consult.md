@@ -11,13 +11,13 @@ Run the Consilium `/cs:consult` workflow.
 1. Derive a short kebab-case slug from the feature description (e.g. "user authentication" → `user-auth`). This slug is the feature name used throughout.
 2. If the user hasn't stated a topic, ask what they need help with.
 3. Based on the topic and current codebase context, suggest which specialists are relevant (e.g. security, performance). List them and ask the user to confirm before proceeding.
-4. For each confirmed specialist:
-   a. Retrieve their SKILL.md: call `consilium-<name>:get_skill` if the MCP tool is available in this session; otherwise read `.consilium/specialists/<name>/SKILL.md` directly. Either way the content goes only to the sub-agent — never into this session's context.
-   b. Spawn a sub-agent with the following prompt:
-      - System context: the full SKILL.md content
-      - Task: the topic and any relevant codebase context
-      The sub-agent should return concrete, actionable recommendations only.
-   c. Record the sub-agent's response. The SKILL.md itself does not need to be retained.
+4. For each confirmed specialist, spawn a sub-agent. Do NOT read SKILL.md or call get_skill in this session — pass only the path or tool name to the sub-agent and let it retrieve the content itself.
+   Sub-agent prompt must include:
+   - For local specialists: "Read `.consilium/specialists/<name>/SKILL.md` and use it as your domain expertise. Do not summarise it — apply it."
+   - For remote specialists: "Call `consilium-<name>:get_skill` to retrieve your SKILL.md and use it as your domain expertise."
+   - The feature description and any relevant codebase context
+   - "Return concrete, actionable recommendations only."
+   Record only the sub-agent's distilled response. If you find yourself reading a SKILL.md file in this session, stop — you are doing it wrong.
 5. If multiple specialists were consulted, identify conflicts between their recommendations:
    - Conflicts that are human judgment calls → surface as-is for the user to decide
    - Conflicts with an objectively better answer → reconcile into a single recommendation
