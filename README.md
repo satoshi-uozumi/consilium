@@ -18,8 +18,9 @@ Clone and build once:
 ```sh
 git clone https://github.com/your-org/consilium.git
 cd consilium
-npm install && npm run build
-npm link packages/cli   # makes `consilium` available globally
+npm install
+npm run build
+npm link --workspace=packages/cli   # makes `consilium` available globally
 ```
 
 Then run this in any project where you want Consilium:
