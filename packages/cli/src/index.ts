@@ -7,6 +7,7 @@ import * as path from 'path';
 const TEMPLATES_DIR = path.join(__dirname, '..', 'templates', 'commands');
 const SPECIALISTS_TEMPLATES_DIR = path.join(__dirname, '..', 'templates', 'specialists');
 const CONFIG_TEMPLATE = path.join(__dirname, '..', 'templates', 'config.json');
+const README_TEMPLATE = path.join(__dirname, '..', 'templates', 'README.md');
 
 interface RemoteSpecialist {
   name: string;
@@ -76,6 +77,13 @@ function install(): void {
   if (!fs.existsSync(configDest)) {
     fs.copyFileSync(CONFIG_TEMPLATE, configDest);
     console.log('Created .consilium/config.json');
+  }
+
+  // README — skip if already present
+  const readmeDest = path.join(cwd, '.consilium', 'README.md');
+  if (!fs.existsSync(readmeDest)) {
+    fs.copyFileSync(README_TEMPLATE, readmeDest);
+    console.log('Created .consilium/README.md');
   }
 
   const commandsDir = path.join(cwd, '.claude', 'commands', 'cs');

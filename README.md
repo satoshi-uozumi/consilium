@@ -34,6 +34,7 @@ This sets up the project for Consilium use:
 ```
 .consilium/
 ├── config.json                        ← default config (port, specialistsDir, specialists list)
+├── README.md                          ← extension guide (for humans and AI)
 ├── plans/                             ← where feature plans are written
 └── specialists/
     └── typescript/SKILL.md            ← bundled default specialist (general TypeScript)
