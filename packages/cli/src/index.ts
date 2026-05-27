@@ -133,10 +133,10 @@ function removeMcpEntries(cwd: string): void {
   console.log('Removed MCP entries from .claude/settings.json');
 }
 
-function start(options: { foreground?: boolean }): void {
+function start(options: { detach?: boolean }): void {
   const cwd = process.cwd();
   const pidFile = path.join(cwd, '.consilium', 'gateway.pid');
-  const foreground = options.foreground ?? false;
+  const foreground = !options.detach;
 
   if (!foreground && fs.existsSync(pidFile)) {
     const pid = parseInt(fs.readFileSync(pidFile, 'utf8').trim(), 10);
@@ -256,7 +256,7 @@ program.command('install').description('Install Consilium into the current proje
 program.command('uninstall').description('Remove Consilium from the current project').action(uninstall);
 program.command('start')
   .description('Start the gateway and register specialist MCP servers')
-  .option('-f, --foreground', 'Run gateway in the foreground (Ctrl+C to stop and deregister)')
+  .option('-d, --detach', 'Run gateway in the background (detached daemon)')
   .action(start);
 program.command('stop').description('Stop the gateway and remove specialist MCP servers').action(stop);
 
