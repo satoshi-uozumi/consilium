@@ -42,7 +42,7 @@ This sets up the project for Consilium use:
 .claude/
 └── commands/
     └── cs/
-        ├── consult.md                 ← /cs:consult
+        ├── plan.md                    ← /cs:plan
         ├── review.md                  ← /cs:review
         ├── work.md                    ← /cs:work
         └── done.md                    ← /cs:done
@@ -55,7 +55,7 @@ Existing files are never overwritten — safe to re-run. MCP servers are **not**
 ## Usage
 
 ```
-/cs:consult <feature description>   — consult specialists, produce a plan
+/cs:plan <feature description>   — consult specialists, produce a plan
 /cs:review <feature-name>           — specialists review the plan before work (optional)
 /cs:work <feature-name>             — execute tasks from the plan
 /cs:done <feature-name>             — archive the completed plan
@@ -64,7 +64,7 @@ Existing files are never overwritten — safe to re-run. MCP servers are **not**
 **Example:**
 
 ```
-/cs:consult add JWT authentication to the API
+/cs:plan add JWT authentication to the API
 ```
 
 Claude Code suggests relevant specialists (e.g. security, performance), consults each via a sub-agent, reconciles any conflicts, and writes `.consilium/plans/user-auth/plan.md`.

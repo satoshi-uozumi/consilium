@@ -1,6 +1,6 @@
 ---
 name: cs:review
-description: "Review a feature plan with specialists before implementation. Use after /cs:consult and before /cs:work."
+description: "Review a feature plan with specialists before implementation. Use after /cs:plan and before /cs:work."
 effort: medium
 argument-hint: <feature-name>
 user-invocable: true
@@ -8,7 +8,7 @@ user-invocable: true
 
 Run the Consilium `/cs:review` workflow.
 
-1. Read `.consilium/plans/<feature-name>/plan.md`. If it doesn't exist, stop and tell the user to run `/cs:consult` first.
+1. Read `.consilium/plans/<feature-name>/plan.md`. If it doesn't exist, stop and tell the user to run `/cs:plan` first.
 2. Identify which specialists contributed to the plan (from the specialist sections in the plan).
 3. For each specialist, spawn a sub-agent. Do NOT read SKILL.md or call get_skill in this session — pass only the path or tool name to the sub-agent and let it retrieve the content itself.
    Sub-agent prompt must include:

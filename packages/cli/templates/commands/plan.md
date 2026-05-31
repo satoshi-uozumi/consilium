@@ -1,12 +1,12 @@
 ---
-name: cs:consult
+name: cs:plan
 description: "Consult specialists and produce a feature plan. Use when starting work on a new feature that spans multiple domains."
 effort: high
 argument-hint: <feature description>
 user-invocable: true
 ---
 
-Run the Consilium `/cs:consult` workflow.
+Run the Consilium `/cs:plan` workflow.
 
 1. Derive a short kebab-case slug from the feature description (e.g. "user authentication" → `user-auth`). This slug is the feature name used throughout.
 2. If the user hasn't stated a topic, ask what they need help with.
