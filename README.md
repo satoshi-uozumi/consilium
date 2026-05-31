@@ -16,7 +16,7 @@ Every other MCP tool aggregates more servers into one endpoint, making the conte
 Clone and build once:
 
 ```sh
-git clone https://github.com/your-org/consilium.git
+git clone https://github.com/satoshi-uozumi/consilium.git
 cd consilium
 npm install
 npm run build
