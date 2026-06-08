@@ -33,11 +33,13 @@ This sets up the project for Consilium use:
 
 ```
 .consilium/
-├── config.json                        ← default config (gateway port, specialistsDir, specialists)
+├── config.json                        ← specialist registry
+├── gateway.json                       ← gateway config (server mode only)
 ├── README.md                          ← extension guide (for humans and AI)
 ├── plans/                             ← where feature plans are written
 └── specialists/
-    └── typescript/SKILL.md            ← bundled default specialist (general TypeScript)
+    ├── typescript/SKILL.md            ← bundled TypeScript specialist
+    └── security/SKILL.md             ← bundled security specialist
 
 .claude/
 └── commands/
@@ -50,7 +52,7 @@ This sets up the project for Consilium use:
 .gitignore                             ← .consilium/ appended
 ```
 
-Existing files are never overwritten — safe to re-run. MCP servers are **not** registered at install time — run `consilium start` to start the gateway and register specialists.
+Existing files are never overwritten — safe to re-run. Local specialists work immediately after install — no gateway needed. Run `consilium start` only if you have specialists with URLs (gateway-served or remote).
 
 ## Usage
 
@@ -90,9 +92,7 @@ The `direction` field rejection is the kind of insight a single-agent approach w
 
 ## Specialists
 
-A specialist is a directory with a single `SKILL.md` file that defines domain expertise. Each specialist runs as its own MCP server, served at `/<name>` on the gateway port. Claude Code connects to each specialist independently as `consilium-<name>`.
-
-Each specialist must be listed explicitly in `config.json` under `specialists`.
+A specialist is a directory with a single `SKILL.md` file that defines domain expertise. Each specialist must be listed in `config.json`. Sub-agents read local SKILL.md files directly — no gateway or MCP connection needed for local use.
 
 ### Adding a specialist
 
@@ -110,16 +110,14 @@ Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
 ### Running the gateway
 
 ```sh
-consilium start         # starts gateway in the foreground — logs stream to terminal, Ctrl+C stops and deregisters
-consilium start -d      # detach mode — spawns gateway in the background, registers per-specialist MCP entries
-consilium stop          # stops background gateway, removes MCP entries
+consilium start         # register URL specialists; start gateway in foreground if localhost URLs present
+consilium start -d      # same, but gateway runs in the background
+consilium stop          # stop gateway, remove MCP entries
 ```
 
-`consilium start` reads `.consilium/config.json` (if present), discovers local specialists, starts the gateway in the foreground, and writes one `consilium-<name>` MCP entry per specialist into `.claude/settings.json`. `consilium stop` reverses both steps.
+`consilium start` registers MCP entries in `.claude/settings.json` for all specialists with URLs, then starts the local gateway only if any URL points to localhost. `consilium stop` reverses both steps.
 
-Use `consilium start -d` (or `--detach`) to run the gateway as a background daemon and reclaim the terminal.
-
-For remote specialists, no local gateway is needed — `consilium start` registers their URLs directly in `.claude/settings.json` and skips the gateway.
+For local specialists (no URL), `consilium start` is not needed — slash commands read SKILL.md directly.
 
 ### Configuration
 
