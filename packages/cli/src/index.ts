@@ -259,7 +259,7 @@ const program = new Command();
 program
   .name('consilium')
   .description('Composable specialist MCP servers for Claude Code')
-  .version('0.1.0');
+  .version('0.2.0');
 
 program.command('install').description('Install Consilium into the current project').action(install);
 program.command('uninstall').description('Remove Consilium from the current project').action(uninstall);
