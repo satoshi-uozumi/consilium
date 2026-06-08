@@ -9,8 +9,7 @@ const GATEWAY_ENTRY = join(ROOT, "packages/gateway/dist/index.js");
 
 /**
  * Creates an isolated temp environment for a test run.
- * The gateway is started with this dir as cwd, so it auto-discovers
- * specialists from .consilium/specialists/ inside it.
+ * Call addSpecialist() and setConfig() before startGateway().
  */
 export function createTestEnv() {
   const dir = join(tmpdir(), `consilium-test-${Date.now()}-${Math.random().toString(36).slice(2)}`);

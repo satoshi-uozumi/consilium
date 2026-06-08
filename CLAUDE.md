@@ -31,10 +31,10 @@ See `README.md` for the full spec.
 
 - npm workspaces: `packages/*` only; `examples/` contains reference material (sample config, sample specialists); `packages/cli/templates/` holds bundled install defaults (slash commands, `typescript` specialist SKILL.md, `config.json`)
 - Transport: StreamableHTTP with per-session transport+McpServer instances (avoids local-path MCP re-entrancy deadlock and supports concurrent clients)
-- Specialists are directories: `<specialistsDir>/<name>/SKILL.md` — gateway auto-discovers when `local.specialists` is omitted from config; bundled config lists them explicitly by default
+- Specialists are directories: `<specialistsDir>/<name>/SKILL.md` — each specialist must be listed explicitly in `config.json` under `specialists`
 - `examples/specialists/security/` and `examples/specialists/performance/` are reference examples only — not built, not run
 - Each specialist is its own McpServer at `/<name>`, exposing a single `get_skill` tool; Claude Code connects as `consilium-<name>:get_skill`; all orchestration lives in the slash commands
-- `.consilium/config.json` controls gateway behaviour: `port` (overrides `PORT` env), `local.specialistsDir` (default: `.consilium/specialists`), `local.specialists` (explicit list; omit to auto-discover), `remote` (array of `{ name, url }` for remote specialists) — all fields optional
+- `.consilium/config.json` controls gateway behaviour: `gateway.port` (overrides `PORT` env), `gateway.specialistsDir` (default: `.consilium/specialists`), `specialists` (required array of `{ name, url }`; local entries use `http://localhost:{port}/{name}`, remote entries use any reachable URL)
 - `consilium start` writes per-specialist `consilium-<name>` entries to `.claude/settings.json`; `consilium stop` removes them
 - Slash commands use `cs:` prefix to avoid collision with other project commands; installed to `.claude/commands/cs/` — Claude Code derives the namespace from the subdirectory name
 - Plans stored at `.consilium/plans/<feature-name>/plan.md`; feature name is a kebab-case slug derived from the description

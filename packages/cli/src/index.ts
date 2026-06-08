@@ -9,18 +9,17 @@ const SPECIALISTS_TEMPLATES_DIR = path.join(__dirname, '..', 'templates', 'speci
 const CONFIG_TEMPLATE = path.join(__dirname, '..', 'templates', 'config.json');
 const README_TEMPLATE = path.join(__dirname, '..', 'templates', 'README.md');
 
-interface RemoteSpecialist {
+interface SpecialistEntry {
   name: string;
   url: string;
 }
 
 interface ConsiliumConfig {
-  port?: number;
-  local?: {
+  gateway?: {
+    port?: number;
     specialistsDir?: string;
-    specialists?: string[];
   };
-  remote?: RemoteSpecialist[];
+  specialists?: SpecialistEntry[];
 }
 
 function readConfig(cwd: string): ConsiliumConfig {
@@ -33,26 +32,17 @@ function readConfig(cwd: string): ConsiliumConfig {
   }
 }
 
-function discoverLocalSpecialists(cwd: string, specialistsDir: string): string[] {
-  const dir = path.join(cwd, specialistsDir);
-  if (!fs.existsSync(dir)) return [];
-  return fs.readdirSync(dir, { withFileTypes: true })
-    .filter((e) => e.isDirectory() && fs.existsSync(path.join(dir, e.name, 'SKILL.md')))
-    .map((e) => e.name);
+function isLocalUrl(url: string, port: number): boolean {
+  try {
+    const u = new URL(url);
+    return (u.hostname === 'localhost' || u.hostname === '127.0.0.1') && u.port === String(port);
+  } catch {
+    return false;
+  }
 }
 
-function resolveSpecialists(cwd: string, config: ConsiliumConfig): { local: string[]; remote: RemoteSpecialist[] } {
-  const specialistsDir = config.local?.specialistsDir ?? '.consilium/specialists';
-  const remote = config.remote ?? [];
-  if (!config.local?.specialists) {
-    return { local: discoverLocalSpecialists(cwd, specialistsDir), remote };
-  }
-  const local = config.local.specialists.filter((name) => {
-    const exists = fs.existsSync(path.join(cwd, specialistsDir, name, 'SKILL.md'));
-    if (!exists) console.warn(`warning: specialist "${name}" has no SKILL.md — skipping`);
-    return exists;
-  });
-  return { local, remote };
+function resolveSpecialists(config: ConsiliumConfig): SpecialistEntry[] {
+  return config.specialists ?? [];
 }
 
 function install(): void {
@@ -109,23 +99,19 @@ function install(): void {
   console.log('\nConsilium installed. Run `consilium start` to start the gateway.');
 }
 
-function registerMcpEntries(cwd: string, port: number, local: string[], remote: RemoteSpecialist[]): void {
+function registerMcpEntries(cwd: string, specialists: SpecialistEntry[]): void {
   const settingsPath = path.join(cwd, '.claude', 'settings.json');
   fs.mkdirSync(path.join(cwd, '.claude'), { recursive: true });
   const settings = fs.existsSync(settingsPath)
     ? (JSON.parse(fs.readFileSync(settingsPath, 'utf8')) as Record<string, unknown>)
     : {};
   const mcpServers = ((settings.mcpServers as Record<string, unknown>) ?? {});
-  for (const name of local) {
-    mcpServers[`consilium-${name}`] = { type: 'http', url: `http://localhost:${port}/${name}` };
-  }
-  for (const r of remote) {
-    mcpServers[`consilium-${r.name}`] = { type: 'http', url: r.url };
+  for (const s of specialists) {
+    mcpServers[`consilium-${s.name}`] = { type: 'http', url: s.url };
   }
   settings.mcpServers = mcpServers;
   fs.writeFileSync(settingsPath, JSON.stringify(settings, null, 2) + '\n');
-  const allNames = [...local, ...remote.map((r) => r.name)];
-  if (allNames.length > 0) console.log(`Registered specialists: ${allNames.join(', ')}`);
+  if (specialists.length > 0) console.log(`Registered specialists: ${specialists.map((s) => s.name).join(', ')}`);
 }
 
 function removeMcpEntries(cwd: string): void {
@@ -158,12 +144,13 @@ function start(options: { detach?: boolean }): void {
   }
 
   const config = readConfig(cwd);
-  const port = config.port ?? 4000;
-  const { local, remote } = resolveSpecialists(cwd, config);
+  const port = config.gateway?.port ?? 4000;
+  const specialists = resolveSpecialists(config);
+  const hasLocal = specialists.some((s) => isLocalUrl(s.url, port));
 
-  if (local.length === 0) {
+  if (!hasLocal) {
     console.log('No local specialists — skipping gateway.');
-    registerMcpEntries(cwd, port, local, remote);
+    registerMcpEntries(cwd, specialists);
     return;
   }
 
@@ -176,7 +163,7 @@ function start(options: { detach?: boolean }): void {
       env: { ...process.env, PORT: String(port) },
     });
 
-    registerMcpEntries(cwd, port, local, remote);
+    registerMcpEntries(cwd, specialists);
 
     let cleaned = false;
     const cleanup = (exitCode?: number | null) => {
@@ -205,7 +192,7 @@ function start(options: { detach?: boolean }): void {
     child.unref();
     fs.writeFileSync(pidFile, String(child.pid));
     console.log(`Gateway started on port ${port} (PID ${child.pid})`);
-    registerMcpEntries(cwd, port, local, remote);
+    registerMcpEntries(cwd, specialists);
   }
 }
 

@@ -1,10 +1,10 @@
 {
-  "port": 4000,
-  "local": {
-    "specialistsDir": ".consilium/specialists",
-    "specialists": ["security"]
+  "gateway": {
+    "port": 4000,
+    "specialistsDir": ".consilium/specialists"
   },
-  "remote": [
+  "specialists": [
+    { "name": "security", "url": "http://localhost:4000/security" },
     { "name": "infra", "url": "http://remote-host:4000/infra" }
   ],
   "auth": {

@@ -33,7 +33,7 @@ This sets up the project for Consilium use:
 
 ```
 .consilium/
-├── config.json                        ← default config (port, specialistsDir, specialists list)
+├── config.json                        ← default config (gateway port, specialistsDir, specialists)
 ├── README.md                          ← extension guide (for humans and AI)
 ├── plans/                             ← where feature plans are written
 └── specialists/
@@ -92,7 +92,7 @@ The `direction` field rejection is the kind of insight a single-agent approach w
 
 A specialist is a directory with a single `SKILL.md` file that defines domain expertise. Each specialist runs as its own MCP server, served at `/<name>` on the gateway port. Claude Code connects to each specialist independently as `consilium-<name>`.
 
-By default the bundled `config.json` lists specialists explicitly under `local.specialists`. To load all specialists in the directory automatically, remove that field — the gateway will discover every subdirectory with a `SKILL.md`.
+Each specialist must be listed explicitly in `config.json` under `specialists`.
 
 ### Adding a specialist
 
@@ -127,27 +127,26 @@ For remote specialists, no local gateway is needed — `consilium start` registe
 
 ```json
 {
-  "port": 4000,
-  "local": {
-    "specialistsDir": ".consilium/specialists",
-    "specialists": ["security"]
+  "gateway": {
+    "port": 4000,
+    "specialistsDir": ".consilium/specialists"
   },
-  "remote": [
+  "specialists": [
+    { "name": "security", "url": "http://localhost:4000/security" },
     { "name": "infra", "url": "http://remote-host:4000/infra" }
   ]
 }
 ```
 
-| Field                  | Default                    | Description                                        |
-|------------------------|----------------------------|----------------------------------------------------|
-| `port`                 | `PORT` env or `4000`       | Port the gateway listens on                        |
-| `local.specialistsDir` | `.consilium/specialists`   | Directory to discover local specialists from       |
-| `local.specialists`    | _(auto-discover all)_      | Explicit list of local specialists to load         |
-| `remote`               | _(none)_                   | Remote specialists — `{ name, url }` array         |
-| `auth.issuer`          | _(none)_                   | OAuth authorization server URL (enables auth)      |
-| `auth.audience`        | _(none)_                   | Expected `aud` claim in bearer tokens              |
+| Field                    | Default                    | Description                                        |
+|--------------------------|----------------------------|----------------------------------------------------|
+| `gateway.port`           | `PORT` env or `4000`       | Port the gateway listens on                        |
+| `gateway.specialistsDir` | `.consilium/specialists`   | Directory to discover local specialists from       |
+| `specialists`            | _(required)_               | List of specialists — `{ name, url }` each         |
+| `auth.issuer`            | _(none)_                   | OAuth authorization server URL (enables auth)      |
+| `auth.audience`          | _(none)_                   | Expected `aud` claim in bearer tokens              |
 
-All fields are optional. With no config file the gateway auto-discovers every specialist found in `local.specialistsDir`. Remote specialists are registered directly in `.claude/settings.json` by `consilium start` — the local gateway does not proxy them.
+All fields except `specialists` are optional. Local specialists use `http://localhost:{port}/{name}` as their URL; remote specialists use any reachable URL. The gateway serves only those specialists whose URL resolves to itself.
 
 ### OAuth (remote gateways only)
 

@@ -28,13 +28,13 @@ All fields are optional.
 
 ```jsonc
 {
-  "port": 4000,                        // Gateway port (default 4000; overrides $PORT)
-  "local": {
-    "specialistsDir": ".consilium/specialists",  // Where to look for local specialists
-    "specialists": ["typescript"]      // Explicit list; omit to auto-discover all subdirs
+  "gateway": {
+    "port": 4000,                              // Gateway port (default 4000; overrides $PORT)
+    "specialistsDir": ".consilium/specialists" // Where to look for local specialists
   },
-  "remote": [
-    { "name": "security", "url": "https://my-host/security" }  // Remote MCP specialists
+  "specialists": [                             // Required — list each specialist explicitly
+    { "name": "typescript", "url": "http://localhost:4000/typescript" },  // local
+    { "name": "security",   "url": "https://my-host/security" }           // remote
   ],
   "auth": {
     "issuer": "https://my-idp.example.com",   // OIDC issuer — enables Bearer token validation
@@ -59,18 +59,16 @@ All fields are optional.
 
 3. Run `consilium start` (or restart if already running). The new specialist is auto-discovered and registered as `consilium-<name>` in `.claude/settings.json`.
 
-If `config.json` has an explicit `local.specialists` list, add the new name to it or remove the list to switch back to auto-discovery.
+Add a `{ "name": "...", "url": "http://localhost:4000/..." }` entry to the `specialists` list in `config.json`.
 
 ---
 
 ## Adding a remote specialist
 
-Add an entry to `config.json`:
+Add an entry to the `specialists` array in `config.json`:
 
 ```json
-"remote": [
-  { "name": "security", "url": "https://my-host/security" }
-]
+{ "name": "security", "url": "https://my-host/security" }
 ```
 
 The URL must point to a Consilium-compatible MCP endpoint (StreamableHTTP, exposing a `get_skill` tool). Run `consilium start` to pick up the change.
