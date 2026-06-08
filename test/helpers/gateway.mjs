@@ -24,6 +24,9 @@ export function createTestEnv() {
     setConfig(config) {
       writeFileSync(join(dir, ".consilium", "config.json"), JSON.stringify(config, null, 2));
     },
+    setGatewayConfig(config) {
+      writeFileSync(join(dir, ".consilium", "gateway.json"), JSON.stringify(config, null, 2));
+    },
     cleanup() {
       rmSync(dir, { recursive: true, force: true });
     },

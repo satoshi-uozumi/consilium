@@ -1,9 +1,6 @@
 {
-  "gateway": {
-    "port": 4000,
-    "specialistsDir": ".consilium/specialists"
-  },
   "specialists": [
-    { "name": "typescript", "url": "http://localhost:4000/typescript" }
+    { "name": "typescript" },
+    { "name": "security" }
   ]
 }

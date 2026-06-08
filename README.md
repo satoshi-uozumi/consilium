@@ -105,7 +105,7 @@ Create a directory under `.consilium/specialists/` and write a `SKILL.md`:
         └── SKILL.md
 ```
 
-`SKILL.md` should describe the domain, the review criteria, and the output format expected of the specialist. See `examples/specialists/security/SKILL.md` and `examples/specialists/performance/SKILL.md` in this repo for reference examples.
+`SKILL.md` should describe the domain, the review criteria, and the output format expected of the specialist. See the bundled `security` specialist in `.consilium/specialists/security/SKILL.md` after `consilium install` for a reference example.
 
 ### Running the gateway
 
@@ -123,45 +123,45 @@ For remote specialists, no local gateway is needed — `consilium start` registe
 
 ### Configuration
 
-`.consilium/config.json` is created by `consilium install`. Edit it to control gateway behaviour:
+`.consilium/config.json` is created by `consilium install`. It lists your specialists:
 
 ```json
 {
-  "gateway": {
-    "port": 4000,
-    "specialistsDir": ".consilium/specialists"
-  },
   "specialists": [
+    { "name": "typescript" },
     { "name": "security", "url": "http://localhost:4000/security" },
     { "name": "infra", "url": "http://remote-host:4000/infra" }
   ]
 }
 ```
 
-| Field                    | Default                    | Description                                        |
-|--------------------------|----------------------------|----------------------------------------------------|
-| `gateway.port`           | `PORT` env or `4000`       | Port the gateway listens on                        |
-| `gateway.specialistsDir` | `.consilium/specialists`   | Directory to discover local specialists from       |
-| `specialists`            | _(required)_               | List of specialists — `{ name, url }` each         |
-| `auth.issuer`            | _(none)_                   | OAuth authorization server URL (enables auth)      |
-| `auth.audience`          | _(none)_                   | Expected `aud` claim in bearer tokens              |
+| Specialist entry              | Behaviour                                                      |
+|-------------------------------|----------------------------------------------------------------|
+| `{ "name": "..." }`           | Local — sub-agents read SKILL.md directly, no gateway needed   |
+| `{ "name": "...", "url": "http://localhost/..." }` | Gateway-served — accessible via MCP, requires `consilium start` |
+| `{ "name": "...", "url": "http://remote/..." }` | Remote — registered in `settings.json`, remote gateway serves it |
 
-All fields except `specialists` are optional. Local specialists use `http://localhost:{port}/{name}` as their URL; remote specialists use any reachable URL. The gateway serves only those specialists whose URL resolves to itself.
+`consilium start` registers MCP entries for all specialists with URLs, and starts the local gateway only if any URL points to localhost.
 
-### OAuth (remote gateways only)
+### Gateway configuration (server mode only)
 
-When `auth` is set, the gateway requires a valid Bearer token on every request. Omit `auth` for local gateways — no token needed.
+To serve specialists via the local gateway, create `.consilium/gateway.json`:
 
 ```json
 {
-  "auth": {
-    "issuer": "https://accounts.google.com",
-    "audience": "consilium-gateway"
-  }
+  "port": 4000,
+  "specialistsDir": ".consilium/specialists"
 }
 ```
 
-The gateway validates tokens against the issuer's JWKS endpoint (discovered via OIDC). Claude Code handles the token acquisition flow natively — it reads the `/.well-known/oauth-protected-resource` metadata the gateway exposes and runs the OAuth exchange automatically.
+| Field           | Default                  | Description                              |
+|-----------------|--------------------------|------------------------------------------|
+| `port`          | `PORT` env or `4000`     | Port the gateway listens on              |
+| `specialistsDir`| `.consilium/specialists` | Directory containing specialist SKILL.md files |
+| `auth.issuer`   | _(none)_                 | OAuth authorization server URL (enables Bearer token validation) |
+| `auth.audience` | _(none)_                 | Expected `aud` claim in bearer tokens    |
+
+The gateway validates tokens against the issuer's JWKS endpoint (discovered via OIDC). Claude Code handles the token acquisition flow natively.
 
 ## Uninstall
 
@@ -176,14 +176,9 @@ consilium/
 ├── packages/
 │   ├── gateway/          # MCP gateway — multiplexes specialists, one McpServer per path
 │   └── cli/              # consilium CLI (install / start / stop / uninstall)
-├── test/
-│   ├── helpers/          # reusable startGateway() and MCP request helpers
-│   └── *.test.mjs        # integration tests (node:test)
-└── examples/
-    ├── config.json                  # sample .consilium/config.json
-    └── specialists/
-        ├── security/SKILL.md        # reference specialist
-        └── performance/SKILL.md     # reference specialist
+└── test/
+    ├── helpers/          # reusable startGateway() and MCP request helpers
+    └── *.test.mjs        # integration tests (node:test)
 ```
 
 ## Development

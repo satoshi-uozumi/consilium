@@ -10,15 +10,16 @@ const DEFAULT_SPECIALISTS_DIR = ".consilium/specialists";
 
 interface SpecialistEntry {
   name: string;
-  url: string;
+  url?: string;
+}
+
+interface ConsiliumConfig {
+  specialists?: SpecialistEntry[];
 }
 
 interface GatewayConfig {
-  gateway?: {
-    port?: number;
-    specialistsDir?: string;
-  };
-  specialists?: SpecialistEntry[];
+  port?: number;
+  specialistsDir?: string;
   auth?: AuthConfig;
 }
 
@@ -38,80 +39,60 @@ function loadSkill(specialistName: string, specialistsDir: string): string {
 }
 
 export class GatewayServer {
+  private logStream: fs.WriteStream | null = null;
+
   constructor(private readonly defaultPort: number) {}
 
-  private loadConfig(): GatewayConfig {
-    const configPath = path.resolve(process.cwd(), ".consilium/config.json");
+  private log(message: string): void {
+    const line = `[consilium-gateway] ${message}\n`;
+    process.stderr.write(line);
+    this.logStream?.write(line);
+  }
+
+  private loadGatewayConfig(): GatewayConfig {
+    const configPath = path.resolve(process.cwd(), ".consilium/gateway.json");
     if (!fs.existsSync(configPath)) return {};
 
     let raw: Record<string, unknown>;
     try {
       raw = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Record<string, unknown>;
     } catch {
-      process.stderr.write("[consilium-gateway] warning: failed to parse .consilium/config.json — using defaults\n");
+      this.log("warning: failed to parse .consilium/gateway.json — using defaults");
       return {};
     }
 
-    const known = new Set(["gateway", "specialists", "auth"]);
+    const known = new Set(["port", "specialistsDir", "auth"]);
     for (const key of Object.keys(raw)) {
       if (!known.has(key)) {
-        process.stderr.write(`[consilium-gateway] warning: unknown config key "${key}" — ignored\n`);
+        this.log(`warning: unknown gateway config key "${key}" — ignored`);
       }
     }
 
     const config: GatewayConfig = {};
 
-    if ("gateway" in raw) {
-      if (raw.gateway === null || typeof raw.gateway !== "object") {
-        process.stderr.write(`[consilium-gateway] warning: config "gateway" must be an object — ignored\n`);
+    if ("port" in raw) {
+      if (typeof raw.port !== "number") {
+        this.log(`warning: gateway config "port" must be a number — ignored`);
       } else {
-        const gw = raw.gateway as Record<string, unknown>;
-        config.gateway = {};
-        if ("port" in gw) {
-          if (typeof gw.port !== "number") {
-            process.stderr.write(`[consilium-gateway] warning: config "gateway.port" must be a number — ignored\n`);
-          } else {
-            config.gateway.port = gw.port;
-          }
-        }
-        if ("specialistsDir" in gw) {
-          if (typeof gw.specialistsDir !== "string") {
-            process.stderr.write(`[consilium-gateway] warning: config "gateway.specialistsDir" must be a string — ignored\n`);
-          } else {
-            config.gateway.specialistsDir = gw.specialistsDir;
-          }
-        }
+        config.port = raw.port;
       }
     }
 
-    if ("specialists" in raw) {
-      if (!Array.isArray(raw.specialists)) {
-        process.stderr.write(`[consilium-gateway] warning: config "specialists" must be an array — ignored\n`);
+    if ("specialistsDir" in raw) {
+      if (typeof raw.specialistsDir !== "string") {
+        this.log(`warning: gateway config "specialistsDir" must be a string — ignored`);
       } else {
-        const entries: SpecialistEntry[] = [];
-        for (const item of raw.specialists) {
-          if (
-            item !== null &&
-            typeof item === "object" &&
-            typeof (item as Record<string, unknown>).name === "string" &&
-            typeof (item as Record<string, unknown>).url === "string"
-          ) {
-            entries.push(item as SpecialistEntry);
-          } else {
-            process.stderr.write(`[consilium-gateway] warning: invalid specialist entry — must be { name, url } — skipping\n`);
-          }
-        }
-        config.specialists = entries;
+        config.specialistsDir = raw.specialistsDir;
       }
     }
 
     if ("auth" in raw) {
       if (raw.auth === null || typeof raw.auth !== "object") {
-        process.stderr.write(`[consilium-gateway] warning: config "auth" must be an object — ignored\n`);
+        this.log(`warning: gateway config "auth" must be an object — ignored`);
       } else {
         const a = raw.auth as Record<string, unknown>;
         if (typeof a.issuer !== "string" || typeof a.audience !== "string") {
-          process.stderr.write(`[consilium-gateway] warning: config "auth" requires string fields "issuer" and "audience" — ignored\n`);
+          this.log(`warning: gateway config "auth" requires string fields "issuer" and "audience" — ignored`);
         } else {
           config.auth = { issuer: a.issuer, audience: a.audience };
         }
@@ -121,10 +102,40 @@ export class GatewayServer {
     return config;
   }
 
+  private loadConsiliumConfig(): ConsiliumConfig {
+    const configPath = path.resolve(process.cwd(), ".consilium/config.json");
+    if (!fs.existsSync(configPath)) return {};
+
+    let raw: Record<string, unknown>;
+    try {
+      raw = JSON.parse(fs.readFileSync(configPath, "utf-8")) as Record<string, unknown>;
+    } catch {
+      this.log("warning: failed to parse .consilium/config.json — no specialists loaded");
+      return {};
+    }
+
+    const config: ConsiliumConfig = {};
+
+    if (Array.isArray(raw.specialists)) {
+      const entries: SpecialistEntry[] = [];
+      for (const item of raw.specialists) {
+        if (item !== null && typeof item === "object" && typeof (item as Record<string, unknown>).name === "string") {
+          const e = item as Record<string, unknown>;
+          entries.push({ name: e.name as string, url: typeof e.url === "string" ? e.url : undefined });
+        } else {
+          this.log(`warning: invalid specialist entry — must have "name" — skipping`);
+        }
+      }
+      config.specialists = entries;
+    }
+
+    return config;
+  }
+
   private resolveLocalNames(names: string[], specialistsDir: string): string[] {
     return names.filter((name) => {
       const exists = fs.existsSync(path.resolve(process.cwd(), specialistsDir, name, "SKILL.md"));
-      if (!exists) process.stderr.write(`[consilium-gateway] warning: specialist "${name}" has no SKILL.md in ${specialistsDir} — skipping\n`);
+      if (!exists) this.log(`warning: specialist "${name}" has no SKILL.md in ${specialistsDir} — skipping`);
       return exists;
     });
   }
@@ -142,29 +153,34 @@ export class GatewayServer {
   }
 
   start(): Promise<void> {
-    const config = this.loadConfig();
-    const port = config.gateway?.port ?? this.defaultPort;
-    const specialistsDir = config.gateway?.specialistsDir ?? DEFAULT_SPECIALISTS_DIR;
-    const auth = config.auth;
+    const logPath = path.resolve(process.cwd(), ".consilium/gateway.log");
+    this.logStream = fs.createWriteStream(logPath, { flags: "w" });
+
+    const gwConfig = this.loadGatewayConfig();
+    const consiliumConfig = this.loadConsiliumConfig();
+    const specialists = consiliumConfig.specialists ?? [];
+    const port = gwConfig.port ?? this.defaultPort;
+    const specialistsDir = gwConfig.specialistsDir ?? DEFAULT_SPECIALISTS_DIR;
+    const auth = gwConfig.auth;
 
     if (auth) {
-      process.stderr.write(`[consilium-gateway] auth enabled — issuer: ${auth.issuer}\n`);
+      this.log(`auth enabled — issuer: ${auth.issuer}`);
     }
 
-    if (!config.specialists || config.specialists.length === 0) {
-      process.stderr.write(`[consilium-gateway] warning: no specialists configured — add entries to .consilium/config.json\n`);
+    const local = specialists.filter((e) => e.url && isLocal(e.url, port));
+    const remote = specialists.filter((e) => e.url && !isLocal(e.url, port));
+
+    if (local.length === 0) {
+      this.log(`warning: no local specialists configured for port ${port} — add localhost URLs to config.json`);
     }
 
-    const allSpecialists = config.specialists ?? [];
-    const local = allSpecialists.filter((e) => isLocal(e.url, port));
-    const remote = allSpecialists.filter((e) => !isLocal(e.url, port));
     const localNames = this.resolveLocalNames(local.map((e) => e.name), specialistsDir);
 
     if (localNames.length > 0) {
-      process.stderr.write(`[consilium-gateway] serving: ${localNames.join(", ")}\n`);
+      this.log(`serving: ${localNames.join(", ")}`);
     }
     if (remote.length > 0) {
-      process.stderr.write(`[consilium-gateway] remote (not served here): ${remote.map((e) => e.name).join(", ")}\n`);
+      this.log(`remote (not served here): ${remote.map((e) => e.name).join(", ")}`);
     }
 
     // Per-specialist session pools: name → (sessionId → transport)
@@ -175,6 +191,15 @@ export class GatewayServer {
 
     return new Promise((resolve, reject) => {
       const httpServer = http.createServer(async (req, res) => {
+        const start = Date.now();
+        const urlPath = (req.url ?? "/").split("?")[0];
+        let sessionNote = "";
+
+        res.on("finish", () => {
+          if (req.method === "OPTIONS") return;
+          this.log(`${req.method} ${urlPath} ${res.statusCode} ${Date.now() - start}ms${sessionNote}`);
+        });
+
         res.setHeader("Access-Control-Allow-Origin", "*");
         res.setHeader("Access-Control-Allow-Methods", "GET, POST, DELETE, OPTIONS");
         res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization, mcp-session-id");
@@ -184,8 +209,6 @@ export class GatewayServer {
           res.end();
           return;
         }
-
-        const urlPath = (req.url ?? "/").split("?")[0];
 
         // OAuth Protected Resource Metadata (RFC 9728) — always unauthenticated
         if (auth && urlPath === "/.well-known/oauth-protected-resource") {
@@ -224,6 +247,7 @@ export class GatewayServer {
 
         if (req.method === "POST" && !sessionId) {
           const sid = randomUUID();
+          sessionNote = ` session=${sid} (new)`;
           const transport = new StreamableHTTPServerTransport({ sessionIdGenerator: () => sid });
           transport.onclose = () => sessions.delete(sid);
           await this.createSpecialistServer(specialistName, specialistsDir).connect(transport);
@@ -241,12 +265,14 @@ export class GatewayServer {
             return;
           }
           if (req.method === "POST") {
+            sessionNote = ` session=${sessionId} (existing)`;
             let body = "";
             req.on("data", (chunk) => { body += chunk; });
             req.on("end", async () => {
               await transport.handleRequest(req, res, body ? JSON.parse(body) : undefined);
             });
           } else {
+            if (req.method === "DELETE") sessionNote = ` session=${sessionId} (closed)`;
             await transport.handleRequest(req, res);
             if (req.method === "DELETE") sessions.delete(sessionId);
           }
@@ -257,7 +283,7 @@ export class GatewayServer {
       });
 
       httpServer.listen(port, () => {
-        process.stderr.write(`[consilium-gateway] listening on port ${port}\n`);
+        this.log(`listening on port ${port}`);
         resolve();
       });
 

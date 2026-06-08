@@ -29,12 +29,11 @@ See `README.md` for the full spec.
 
 ## Key decisions
 
-- npm workspaces: `packages/*` only; `examples/` contains reference material (sample config, sample specialists); `packages/cli/templates/` holds bundled install defaults (slash commands, `typescript` specialist SKILL.md, `config.json`)
+- npm workspaces: `packages/*` only; `packages/cli/templates/` holds bundled install defaults (slash commands, `typescript` and `security` specialist SKILL.md files, `config.json`, `gateway.json`)
 - Transport: StreamableHTTP with per-session transport+McpServer instances (avoids local-path MCP re-entrancy deadlock and supports concurrent clients)
-- Specialists are directories: `<specialistsDir>/<name>/SKILL.md` — each specialist must be listed explicitly in `config.json` under `specialists`
-- `examples/specialists/security/` and `examples/specialists/performance/` are reference examples only — not built, not run
+- Specialists are directories: `<specialistsDir>/<name>/SKILL.md` — listed in `config.json` under `specialists`; no URL = local direct-read; localhost URL = gateway-served; remote URL = registered in `settings.json`
 - Each specialist is its own McpServer at `/<name>`, exposing a single `get_skill` tool; Claude Code connects as `consilium-<name>:get_skill`; all orchestration lives in the slash commands
-- `.consilium/config.json` controls gateway behaviour: `gateway.port` (overrides `PORT` env), `gateway.specialistsDir` (default: `.consilium/specialists`), `specialists` (required array of `{ name, url }`; local entries use `http://localhost:{port}/{name}`, remote entries use any reachable URL)
+- `.consilium/config.json` lists specialists: `{ name }` for local direct-read, `{ name, url }` for gateway-served (localhost) or remote; `.consilium/gateway.json` configures the gateway process: `port`, `specialistsDir`, `auth` — only needed when running a gateway server
 - `consilium start` writes per-specialist `consilium-<name>` entries to `.claude/settings.json`; `consilium stop` removes them
 - Slash commands use `cs:` prefix to avoid collision with other project commands; installed to `.claude/commands/cs/` — Claude Code derives the namespace from the subdirectory name
 - Plans stored at `.consilium/plans/<feature-name>/plan.md`; feature name is a kebab-case slug derived from the description

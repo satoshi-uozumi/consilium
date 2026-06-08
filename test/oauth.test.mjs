@@ -12,11 +12,8 @@ before(async () => {
   oauth = await createOAuthSetup();
   env = createTestEnv();
   env.addSpecialist("typescript", "# TypeScript\n\nTS best practices.");
-  env.setConfig({
-    gateway: { port: PORT },
-    specialists: [{ name: "typescript", url: `http://localhost:${PORT}/typescript` }],
-    auth: { issuer: oauth.issuer, audience: oauth.audience },
-  });
+  env.setConfig({ specialists: [{ name: "typescript", url: `http://localhost:${PORT}/typescript` }] });
+  env.setGatewayConfig({ port: PORT, auth: { issuer: oauth.issuer, audience: oauth.audience } });
   gateway = await startGateway(env.dir, PORT);
 });
 

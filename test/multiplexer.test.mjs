@@ -10,10 +10,8 @@ let env;
 before(async () => {
   env = createTestEnv();
   env.addSpecialist("security", "# Security\n\nCheck OWASP top 10.");
-  env.setConfig({
-    gateway: { port: PORT },
-    specialists: [{ name: "security", url: `http://localhost:${PORT}/security` }],
-  });
+  env.setConfig({ specialists: [{ name: "security", url: `http://localhost:${PORT}/security` }] });
+  env.setGatewayConfig({ port: PORT });
   gateway = await startGateway(env.dir, PORT);
 });
 
